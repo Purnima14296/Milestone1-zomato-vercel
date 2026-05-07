@@ -1,0 +1,22 @@
+{
+  "report_type": "quality_summary",
+  "time_period_hours": 24,
+  "generated_at": 1778096625.956271,
+  "executive_summary": {
+    "overall_quality_score": 0,
+    "constraint_satisfaction": 0,
+    "diversity_score": 0,
+    "performance_score": 1.0,
+    "total_recommendations": 0
+  },
+  "detailed_metrics": {
+    "constraint_metrics": {},
+    "diversity_metrics": {},
+    "performance_metrics": {}
+  },
+  "recommendations": [
+    "Consider improving LLM prompt quality for better explanations",
+    "Review constraint validation logic to improve satisfaction rates",
+    "Increase diversity in recommendation algorithm to avoid filter bubbles"
+  ]
+}

@@ -1,0 +1,45 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Env / secrets
+.env
+
+# Data / outputs
+data/
+storage/
+logs/
+
+# Frontend
+phase8/node_modules/
+phase8/.next/
+phase8/out/
+phase8/build/
+phase8/dist/
+phase8/.env.local
+phase8/.env.development.local
+phase8/.env.test.local
+phase8/.env.production.local
+phase8/npm-debug.log*
+phase8/yarn-debug.log*
+phase8/yarn-error.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_*.json
+test_*.py
+

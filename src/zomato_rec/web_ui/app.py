@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import os
 import sys
 from pathlib import Path
@@ -20,6 +21,10 @@ import streamlit as st
 from backend.app.pipeline import default_dataset_path, list_dataset_cities, run_recommendations
 from backend.app.schemas import BudgetRangeIn, PreferencesIn, RecommendationRequest
 
+# Fixed pipeline defaults (no advanced UI)
+_DEFAULT_TOP_K = 5
+_DEFAULT_SHORTLIST_N = 30
+
 
 def _inject_streamlit_secrets() -> None:
     """Map Streamlit Cloud / local `.streamlit/secrets.toml` into os.environ for Settings + pipeline."""
@@ -34,6 +39,47 @@ def _inject_streamlit_secrets() -> None:
         t = str(sec["HF_TOKEN"]).strip()
         os.environ["HF_TOKEN"] = t
         os.environ.setdefault("HUGGING_FACE_HUB_TOKEN", t)
+
+
+def _inject_ui_styles() -> None:
+    """Typography + polish on top of `.streamlit/config.toml` dark theme."""
+    st.markdown(
+        """
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+        <style>
+            html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+                font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif !important;
+            }
+            [data-testid="stAppViewContainer"] .block-container {
+                padding-top: 2rem;
+                padding-bottom: 3rem;
+                max-width: 900px;
+            }
+            h1 { font-weight: 700 !important; letter-spacing: -0.03em !important; font-size: 2.1rem !important; }
+            h2, h3 { font-weight: 600 !important; letter-spacing: -0.02em !important; }
+            [data-testid="stForm"] {
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 16px;
+                padding: 1.25rem 1.35rem 1.5rem;
+                background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 100%);
+            }
+            .reco-card {
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 14px;
+                padding: 1rem 1.15rem;
+                margin-bottom: 0.75rem;
+                background: rgba(255,255,255,0.03);
+            }
+            .reco-title { font-size: 1.15rem; font-weight: 600; margin: 0 0 0.35rem 0; color: #fafafa; }
+            .reco-meta { font-size: 0.88rem; color: #a1a1aa; margin-bottom: 0.5rem; }
+            .reco-reason { font-size: 0.95rem; line-height: 1.55; color: #d4d4d8; margin: 0; }
+            .reco-rank { color: #22c55e; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _dataset_ok() -> bool:
@@ -69,18 +115,29 @@ def _run_phase1_bootstrap() -> None:
     )
 
 
+def _budget_range_in_from_text(raw: str) -> BudgetRangeIn | None:
+    from zomato_rec.phase2.normalize import parse_budget
+
+    br = parse_budget(raw)
+    if br is None:
+        return None
+    return BudgetRangeIn(min=br.min, max=br.max)
+
+
 def main() -> None:
     _inject_streamlit_secrets()
 
     st.set_page_config(
         page_title="Zomato AI Recommender",
-        layout="wide",
+        layout="centered",
         initial_sidebar_state="expanded",
     )
-    st.title("Restaurant recommendations")
+    _inject_ui_styles()
+
+    st.title("Find your next meal")
     st.caption(
-        "Phase 9 — **All-in-one Python app**: preferences → shortlist → Groq → results (same engine as the **FastAPI** backend). "
-        "The **Next.js** UI is not started here; deploy or run `frontend` + `backend` separately if you need that client."
+        "Preferences → shortlist → Groq — same engine as the **FastAPI** backend. "
+        "Use the **Next.js** app only when you run `frontend` + `backend` separately."
     )
 
     from zomato_rec.config import Settings
@@ -88,44 +145,38 @@ def main() -> None:
     settings = Settings()
 
     with st.sidebar:
-        st.subheader("Deployment")
-        ds_path = default_dataset_path()
+        st.subheader("Status")
         if _dataset_ok():
-            st.success("Dataset OK")
-            st.code(str(ds_path), language="text")
+            st.success("Dataset ready")
+            st.caption(str(default_dataset_path()))
         else:
-            st.warning(
-                "No Parquet yet. Use **Prepare dataset from Hugging Face** in the main panel (first run may take a few minutes), "
-                "or set **`ZOMATO_PROCESSED_DATASET`** to a file path."
-            )
+            st.warning("Dataset not built yet — use the button in the main area.")
 
         if settings.groq_api_key:
-            st.success("Groq API key is set (`GROQ_API_KEY`).")
+            st.success("Groq API key configured")
         else:
-            st.error("Missing Groq key. Add `GROQ_API_KEY` to `.env` or Streamlit **Secrets**.")
+            st.error("Set `GROQ_API_KEY` in secrets or `.env`.")
 
-        st.markdown(
-            "**Streamlit Community Cloud:** set secrets to match `.streamlit/secrets.toml.example`, "
-            "main file **`streamlit_app.py`**, and use **`requirements.txt`** at repo root."
-        )
+        st.divider()
+        st.caption("Streamlit Cloud: main file `streamlit_app.py`, `requirements.txt` at repo root.")
 
     if not _dataset_ok():
         st.error(
-            "**No processed restaurant file yet.** Streamlit Cloud clones your repo without the `data/` folder "
-            "(it is gitignored), so recommendations cannot run until a Parquet exists on this machine."
+            "**No processed restaurant file yet.** This host has no `data/processed/restaurants.parquet` "
+            "(that folder is not in git)."
         )
         st.markdown(
-            "Use the button below to run **Phase 1 ingest** once: it downloads the Hugging Face dataset and writes "
-            "`data/processed/restaurants.parquet`. Typical time **1–4 minutes**; keep the tab open."
+            "Run **Phase 1** once here: downloads the Hugging Face dataset and builds the Parquet. "
+            "Typical time **1–4 minutes**."
         )
         if st.button("Prepare dataset from Hugging Face", type="primary"):
             try:
-                with st.spinner("Downloading and preprocessing… (Phase 1)"):
+                with st.spinner("Downloading and preprocessing…"):
                     _run_phase1_bootstrap()
-                st.success("Dataset built. Refreshing the app…")
+                st.success("Dataset ready. Reloading…")
                 st.rerun()
             except Exception as e:
-                st.error("Could not build the dataset. Check logs below. For private HF datasets, add **HF_TOKEN** to secrets.")
+                st.error("Ingest failed. For private HF data, add **HF_TOKEN** to secrets.")
                 st.exception(e)
         st.divider()
 
@@ -137,43 +188,46 @@ def main() -> None:
             cities = []
 
     with st.form("preferences"):
-        st.subheader("Your preferences")
-        c1, c2 = st.columns(2)
+        st.markdown("### Your preferences")
 
-        with c1:
-            if cities:
-                loc_options = [""] + cities
+        if cities:
+            loc_options = [""] + cities
 
-                def _loc_label(v: str) -> str:
-                    return "Select location" if v == "" else v
+            def _loc_label(v: str) -> str:
+                return "Select location" if v == "" else v
 
-                location = st.selectbox("Location", options=loc_options, format_func=_loc_label)
-            else:
-                location = st.text_input("Location (city/locality)", placeholder="e.g. Koramangala")
+            location = st.selectbox("Location", options=loc_options, format_func=_loc_label)
+        else:
+            location = st.text_input("Location", placeholder="City or locality, e.g. Koramangala")
 
-            budget_max = st.slider("Budget max (for two, ₹)", min_value=0, max_value=5000, value=1500, step=100)
+        budget_raw = st.text_input(
+            "Budget (for two)",
+            placeholder="Examples: 1500 · 500-2000 · under 800 · medium · high · leave empty for any",
+            help="Numbers in ₹, ranges, “under/over”, or low / medium / high.",
+            autocomplete="off",
+        )
 
+        r1, r2 = st.columns(2)
+        with r1:
             rating_choice = st.selectbox(
                 "Minimum rating",
                 options=["Any", "3.0+", "3.5+", "4.0+", "4.5+"],
                 index=0,
             )
-            rating_map = {"Any": None, "3.0+": 3.0, "3.5+": 3.5, "4.0+": 4.0, "4.5+": 4.5}
-            min_rating = rating_map[rating_choice]
-
-        with c2:
+        with r2:
             cuisines_raw = st.text_input(
-                "Cuisines (optional, comma-separated)",
-                placeholder="North Indian, Thai",
+                "Cuisines (optional)",
+                placeholder="Comma-separated, e.g. North Indian, Thai",
                 autocomplete="off",
             )
-            extra = st.text_area("Additional preferences (optional)", placeholder="Date night, outdoor seating…")
 
-        with st.expander("Advanced"):
-            top_k = st.number_input("Top K recommendations", min_value=1, max_value=20, value=5, step=1)
-            shortlist_n = st.number_input("Shortlist size (Phase 3)", min_value=5, max_value=100, value=30, step=5)
+        extra = st.text_area(
+            "Additional preferences (optional)",
+            placeholder="Date night, outdoor seating, kid-friendly…",
+            height=100,
+        )
 
-        submitted = st.form_submit_button("Get recommendations", type="primary")
+        submitted = st.form_submit_button("Get recommendations", type="primary", use_container_width=True)
 
     if not submitted:
         return
@@ -187,27 +241,30 @@ def main() -> None:
         return
 
     if not _dataset_ok():
-        st.error(
-            "Dataset still missing. Use **Prepare dataset from Hugging Face** above, "
-            "or set **`ZOMATO_PROCESSED_DATASET`** in `.env` / Streamlit secrets."
-        )
+        st.error("Dataset still missing. Use **Prepare dataset from Hugging Face** above.")
         return
 
+    budget_in = _budget_range_in_from_text(budget_raw)
+    if budget_raw.strip() and budget_in is None:
+        st.warning("Budget text was not recognized; continuing **without** a budget cap. Try a number, range (500-2000), or low / medium / high.")
+    rating_map = {"Any": None, "3.0+": 3.0, "3.5+": 3.5, "4.0+": 4.0, "4.5+": 4.5}
+    min_rating = rating_map[rating_choice]
     cuisines = _parse_cuisines(cuisines_raw)
+
     prefs = PreferencesIn(
         location=location.strip(),
-        budget=BudgetRangeIn(min=0.0, max=float(budget_max)),
+        budget=budget_in,
         cuisines=cuisines,
         minimum_rating=min_rating,
         additional_preferences=extra.strip() if extra.strip() else None,
     )
     req = RecommendationRequest(
         preferences=prefs,
-        top_k=int(top_k),
-        shortlist_top_n=int(shortlist_n),
+        top_k=_DEFAULT_TOP_K,
+        shortlist_top_n=_DEFAULT_SHORTLIST_N,
     )
 
-    with st.spinner("Retrieving candidates and calling the model…"):
+    with st.spinner("Finding restaurants…"):
         try:
             result = run_recommendations(req)
         except FileNotFoundError as e:
@@ -224,28 +281,40 @@ def main() -> None:
             return
 
     meta = result.metadata
-    st.subheader("Results")
+    st.markdown("### Your picks")
     st.caption(
-        f"Model `{meta.model}` · {meta.processing_time_ms:.0f} ms · shortlist {meta.shortlist_size} "
-        f"(filtered {meta.candidates_after_filtering})"
+        f"{meta.model} · {meta.processing_time_ms:.0f} ms · {meta.shortlist_size} shortlisted "
+        f"({meta.candidates_after_filtering} after filters)"
     )
 
     for row in result.recommendations:
-        name = row.get("restaurant_name", "Restaurant")
-        rank = row.get("rank", "")
-        with st.container():
-            st.markdown(f"#### #{rank} — {name}")
-            bits = [
-                row.get("city"),
-                f"★ {row['rating']}" if row.get("rating") is not None else None,
-                f"~₹{row['cost_estimate']}" if row.get("cost_estimate") is not None else None,
-            ]
-            st.write(" · ".join(str(b) for b in bits if b))
-            if row.get("cuisines"):
-                cu = row["cuisines"]
-                st.caption(", ".join(map(str, cu)) if isinstance(cu, list) else str(cu))
-            st.write(row.get("reason", ""))
-            st.divider()
+        name = html.escape(str(row.get("restaurant_name", "Restaurant")))
+        rank = html.escape(str(row.get("rank", "")))
+        bits = [
+            row.get("city"),
+            f"★ {row['rating']}" if row.get("rating") is not None else None,
+            f"~₹{row['cost_estimate']}" if row.get("cost_estimate") is not None else None,
+        ]
+        meta_line = html.escape(" · ".join(str(b) for b in bits if b))
+        cu_html = ""
+        if row.get("cuisines"):
+            cu = row["cuisines"]
+            cu_text = ", ".join(map(str, cu)) if isinstance(cu, list) else str(cu)
+            cu_html = f'<p class="reco-meta" style="margin-top:0.25rem">{html.escape(cu_text)}</p>'
+        reason_raw = str(row.get("reason", ""))
+        reason = html.escape(reason_raw).replace("\n", "<br/>")
+        st.markdown(
+            f"""
+            <div class="reco-card">
+                <div class="reco-rank">Rank #{rank}</div>
+                <p class="reco-title">{name}</p>
+                <p class="reco-meta">{meta_line}</p>
+                {cu_html}
+                <p class="reco-reason">{reason}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 if __name__ == "__main__":

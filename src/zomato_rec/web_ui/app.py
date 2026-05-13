@@ -60,19 +60,28 @@ def _inject_ui_styles() -> None:
             h1 { font-weight: 700 !important; letter-spacing: -0.03em !important; font-size: 2.1rem !important; }
             h2, h3 { font-weight: 600 !important; letter-spacing: -0.02em !important; }
             [data-testid="stForm"] {
-                border: 1px solid rgba(255,255,255,0.08);
+                border: 1px solid rgba(255, 255, 255, 0.14);
                 border-radius: 16px;
                 padding: 1.25rem 1.35rem 1.5rem;
-                background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 100%);
-                transition: border-color 0.22s ease, box-shadow 0.28s ease, transform 0.22s ease;
+                background: #14141c;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 40px rgba(0, 0, 0, 0.45);
             }
-            [data-testid="stForm"]:hover {
-                border-color: rgba(226, 55, 68, 0.2);
-                box-shadow: 0 10px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(226, 55, 68, 0.06);
+            /* Softer placeholder / example copy inside fields */
+            div[data-testid="stTextInput"] input::placeholder,
+            div[data-testid="stTextArea"] textarea::placeholder {
+                color: rgba(180, 180, 190, 0.55) !important;
+                opacity: 1 !important;
             }
-            /* Text fields: hover + focus glow */
+            div[data-testid="stTextInput"] input::-webkit-input-placeholder,
+            div[data-testid="stTextArea"] textarea::-webkit-input-placeholder {
+                color: rgba(180, 180, 190, 0.55) !important;
+            }
+            /* Fields: darker than form panel for contrast */
             div[data-testid="stTextInput"] input,
             div[data-testid="stTextArea"] textarea {
+                background-color: #0a0a10 !important;
+                color: #f4f4f5 !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
                 transition: border-color 0.2s ease, box-shadow 0.24s ease, transform 0.16s ease !important;
             }
             div[data-testid="stTextInput"]:hover input,
@@ -85,9 +94,11 @@ def _inject_ui_styles() -> None:
                 border-color: #e23744 !important;
                 box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.22) !important;
             }
-            /* Select boxes */
+            /* Select boxes — match input depth */
             div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
                 transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
+                background-color: #0a0a10 !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
             }
             div[data-testid="stSelectbox"]:hover [data-baseweb="select"] > div {
                 border-color: rgba(226, 55, 68, 0.5) !important;
@@ -99,6 +110,7 @@ def _inject_ui_styles() -> None:
             }
             div[data-testid="stSelectbox"] [role="combobox"] {
                 transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
+                background-color: #0a0a10 !important;
             }
             div[data-testid="stSelectbox"]:hover [role="combobox"] {
                 border-color: rgba(226, 55, 68, 0.45) !important;

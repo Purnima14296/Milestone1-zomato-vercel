@@ -323,22 +323,25 @@ def main() -> None:
     with st.form("preferences"):
         st.markdown("### Your preferences")
 
-        if cities:
-            loc_options = [""] + cities
+        loc_col, budget_col = st.columns(2)
+        with loc_col:
+            if cities:
+                loc_options = [""] + cities
 
-            def _loc_label(v: str) -> str:
-                return "Select location" if v == "" else v
+                def _loc_label(v: str) -> str:
+                    return "Select location" if v == "" else v
 
-            location = st.selectbox("Location", options=loc_options, format_func=_loc_label)
-        else:
-            location = st.text_input("Location", placeholder="City or locality, e.g. Koramangala")
+                location = st.selectbox("Location", options=loc_options, format_func=_loc_label)
+            else:
+                location = st.text_input("Location", placeholder="City or locality, e.g. Koramangala")
 
-        budget_raw = st.text_input(
-            "Budget (for two)",
-            placeholder="Examples: 1500 · 500-2000 · under 800 · medium · high · leave empty for any",
-            help="Numbers in ₹, ranges, “under/over”, or low / medium / high.",
-            autocomplete="off",
-        )
+        with budget_col:
+            budget_raw = st.text_input(
+                "Budget (for two)",
+                placeholder="Examples: 1500 · 500-2000 · under 800 · medium · high · leave empty for any",
+                help="Numbers in ₹, ranges, “under/over”, or low / medium / high.",
+                autocomplete="off",
+            )
 
         r1, r2 = st.columns(2)
         with r1:

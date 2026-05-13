@@ -64,6 +64,65 @@ def _inject_ui_styles() -> None:
                 border-radius: 16px;
                 padding: 1.25rem 1.35rem 1.5rem;
                 background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 100%);
+                transition: border-color 0.22s ease, box-shadow 0.28s ease, transform 0.22s ease;
+            }
+            [data-testid="stForm"]:hover {
+                border-color: rgba(226, 55, 68, 0.2);
+                box-shadow: 0 10px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(226, 55, 68, 0.06);
+            }
+            /* Text fields: hover + focus glow */
+            div[data-testid="stTextInput"] input,
+            div[data-testid="stTextArea"] textarea {
+                transition: border-color 0.2s ease, box-shadow 0.24s ease, transform 0.16s ease !important;
+            }
+            div[data-testid="stTextInput"]:hover input,
+            div[data-testid="stTextArea"]:hover textarea {
+                border-color: rgba(226, 55, 68, 0.5) !important;
+                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+            }
+            div[data-testid="stTextInput"]:focus-within input,
+            div[data-testid="stTextArea"]:focus-within textarea {
+                border-color: #e23744 !important;
+                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.22) !important;
+            }
+            /* Select boxes */
+            div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+                transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
+            }
+            div[data-testid="stSelectbox"]:hover [data-baseweb="select"] > div {
+                border-color: rgba(226, 55, 68, 0.5) !important;
+                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+            }
+            div[data-testid="stSelectbox"]:focus-within [data-baseweb="select"] > div {
+                border-color: #e23744 !important;
+                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.2) !important;
+            }
+            div[data-testid="stSelectbox"] [role="combobox"] {
+                transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
+            }
+            div[data-testid="stSelectbox"]:hover [role="combobox"] {
+                border-color: rgba(226, 55, 68, 0.45) !important;
+                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+            }
+            /* Buttons */
+            div[data-testid="stFormSubmitButton"] button,
+            section[data-testid="stSidebar"] button,
+            .stButton > button {
+                transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.18s ease, border-color 0.18s ease !important;
+            }
+            div[data-testid="stFormSubmitButton"]:hover button {
+                transform: translateY(-2px);
+                filter: brightness(1.08);
+                box-shadow: 0 10px 28px rgba(226, 55, 68, 0.38) !important;
+            }
+            div[data-testid="stFormSubmitButton"]:active button {
+                transform: translateY(0);
+            }
+            .stButton > button:hover,
+            section[data-testid="stSidebar"] button:hover {
+                transform: translateY(-1px);
+                filter: brightness(1.06);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.4) !important;
             }
             .reco-card {
                 border: 1px solid rgba(255,255,255,0.1);
@@ -71,6 +130,13 @@ def _inject_ui_styles() -> None:
                 padding: 1rem 1.15rem;
                 margin-bottom: 0.75rem;
                 background: rgba(255,255,255,0.03);
+                transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.24s ease, transform 0.18s ease;
+            }
+            .reco-card:hover {
+                border-color: rgba(226, 55, 68, 0.35);
+                background: rgba(255,255,255,0.055);
+                box-shadow: 0 8px 28px rgba(0,0,0,0.25);
+                transform: translateY(-2px);
             }
             .reco-title { font-size: 1.15rem; font-weight: 600; margin: 0 0 0.35rem 0; color: #fafafa; }
             .reco-meta { font-size: 0.88rem; color: #a1a1aa; margin-bottom: 0.5rem; }

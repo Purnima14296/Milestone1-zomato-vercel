@@ -47,113 +47,168 @@ def _inject_ui_styles() -> None:
         """
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Outfit:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
         <style>
+            :root {
+                --olive: #8b9a6e;
+                --olive-dark: #6f7d56;
+                --olive-muted: #a8b596;
+                --surface-form: #14141c;
+                --surface-field: #0a0a10;
+            }
             html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-                font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif !important;
+                font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif !important;
+                font-size: 16px;
             }
             [data-testid="stAppViewContainer"] .block-container {
                 padding-top: 2rem;
                 padding-bottom: 3rem;
                 max-width: 900px;
             }
-            h1 { font-weight: 700 !important; letter-spacing: -0.03em !important; font-size: 2.1rem !important; }
-            h2, h3 { font-weight: 600 !important; letter-spacing: -0.02em !important; }
+            /* Main title — distinct serif */
+            h1 {
+                font-family: "Fraunces", Georgia, "Times New Roman", serif !important;
+                font-weight: 700 !important;
+                letter-spacing: -0.02em !important;
+                font-size: 2.15rem !important;
+                color: #f7f5f2 !important;
+                line-height: 1.2 !important;
+            }
+            /* Section subtitles — dark olive on dark UI */
+            h2, h3 {
+                font-family: "Outfit", "Source Sans 3", sans-serif !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.04em !important;
+                text-transform: none !important;
+                color: var(--olive) !important;
+                margin-top: 0.35rem !important;
+            }
+            /* Widget labels — lighter olive, different weight from body */
+            [data-testid="stWidgetLabel"] p,
+            label[data-testid="stWidgetLabel"] span {
+                font-family: "Outfit", sans-serif !important;
+                font-weight: 500 !important;
+                font-size: 0.8125rem !important;
+                letter-spacing: 0.06em !important;
+                text-transform: uppercase !important;
+                color: var(--olive-muted) !important;
+            }
+            /* Captions / helper copy */
+            [data-testid="stCaption"] {
+                font-family: "Source Sans 3", sans-serif !important;
+                color: #9aa08c !important;
+                font-size: 0.875rem !important;
+                line-height: 1.5 !important;
+            }
+            [data-testid="stMarkdownContainer"] p {
+                line-height: 1.55 !important;
+                color: #d6d8d0 !important;
+            }
             [data-testid="stForm"] {
-                border: 1px solid rgba(255, 255, 255, 0.14);
+                border: 1px solid rgba(139, 154, 110, 0.22);
                 border-radius: 16px;
                 padding: 1.25rem 1.35rem 1.5rem;
-                background: #14141c;
-                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 40px rgba(0, 0, 0, 0.45);
+                background: var(--surface-form);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 28px rgba(0, 0, 0, 0.35);
             }
-            /* Softer placeholder / example copy inside fields */
             div[data-testid="stTextInput"] input::placeholder,
             div[data-testid="stTextArea"] textarea::placeholder {
-                color: rgba(180, 180, 190, 0.55) !important;
+                color: rgba(160, 168, 150, 0.5) !important;
                 opacity: 1 !important;
             }
             div[data-testid="stTextInput"] input::-webkit-input-placeholder,
             div[data-testid="stTextArea"] textarea::-webkit-input-placeholder {
-                color: rgba(180, 180, 190, 0.55) !important;
+                color: rgba(160, 168, 150, 0.5) !important;
             }
-            /* Fields: darker than form panel for contrast */
             div[data-testid="stTextInput"] input,
             div[data-testid="stTextArea"] textarea {
-                background-color: #0a0a10 !important;
-                color: #f4f4f5 !important;
-                border-color: rgba(255, 255, 255, 0.1) !important;
-                transition: border-color 0.2s ease, box-shadow 0.24s ease, transform 0.16s ease !important;
+                font-family: "Source Sans 3", sans-serif !important;
+                background-color: var(--surface-field) !important;
+                color: #eef0ea !important;
+                border-color: rgba(255, 255, 255, 0.09) !important;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
             }
             div[data-testid="stTextInput"]:hover input,
             div[data-testid="stTextArea"]:hover textarea {
-                border-color: rgba(226, 55, 68, 0.5) !important;
-                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+                border-color: rgba(139, 154, 110, 0.35) !important;
+                box-shadow: 0 0 0 1px rgba(139, 154, 110, 0.12) !important;
             }
             div[data-testid="stTextInput"]:focus-within input,
             div[data-testid="stTextArea"]:focus-within textarea {
-                border-color: #e23744 !important;
-                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.22) !important;
+                border-color: rgba(226, 55, 68, 0.55) !important;
+                box-shadow: 0 0 0 2px rgba(226, 55, 68, 0.12) !important;
             }
-            /* Select boxes — match input depth */
             div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
-                transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
-                background-color: #0a0a10 !important;
-                border-color: rgba(255, 255, 255, 0.1) !important;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+                background-color: var(--surface-field) !important;
+                border-color: rgba(255, 255, 255, 0.09) !important;
             }
             div[data-testid="stSelectbox"]:hover [data-baseweb="select"] > div {
-                border-color: rgba(226, 55, 68, 0.5) !important;
-                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+                border-color: rgba(139, 154, 110, 0.35) !important;
+                box-shadow: 0 0 0 1px rgba(139, 154, 110, 0.1) !important;
             }
             div[data-testid="stSelectbox"]:focus-within [data-baseweb="select"] > div {
-                border-color: #e23744 !important;
-                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.2) !important;
+                border-color: rgba(226, 55, 68, 0.5) !important;
+                box-shadow: 0 0 0 2px rgba(226, 55, 68, 0.1) !important;
             }
             div[data-testid="stSelectbox"] [role="combobox"] {
-                transition: border-color 0.2s ease, box-shadow 0.24s ease !important;
-                background-color: #0a0a10 !important;
+                transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+                background-color: var(--surface-field) !important;
             }
             div[data-testid="stSelectbox"]:hover [role="combobox"] {
-                border-color: rgba(226, 55, 68, 0.45) !important;
-                box-shadow: 0 0 0 3px rgba(226, 55, 68, 0.1) !important;
+                border-color: rgba(139, 154, 110, 0.32) !important;
+                box-shadow: 0 0 0 1px rgba(139, 154, 110, 0.1) !important;
             }
-            /* Buttons */
             div[data-testid="stFormSubmitButton"] button,
             section[data-testid="stSidebar"] button,
             .stButton > button {
-                transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.18s ease, border-color 0.18s ease !important;
+                font-family: "Outfit", sans-serif !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.03em !important;
+                transition: filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
             }
             div[data-testid="stFormSubmitButton"]:hover button {
-                transform: translateY(-2px);
-                filter: brightness(1.08);
-                box-shadow: 0 10px 28px rgba(226, 55, 68, 0.38) !important;
+                filter: brightness(1.04);
+                box-shadow: 0 4px 14px rgba(226, 55, 68, 0.22) !important;
             }
             div[data-testid="stFormSubmitButton"]:active button {
-                transform: translateY(0);
+                filter: brightness(0.98);
             }
             .stButton > button:hover,
             section[data-testid="stSidebar"] button:hover {
-                transform: translateY(-1px);
-                filter: brightness(1.06);
-                box-shadow: 0 6px 20px rgba(0,0,0,0.4) !important;
+                filter: brightness(1.05);
+                box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28) !important;
             }
             .reco-card {
-                border: 1px solid rgba(255,255,255,0.1);
+                border: 1px solid rgba(139, 154, 110, 0.18);
                 border-radius: 14px;
                 padding: 1rem 1.15rem;
                 margin-bottom: 0.75rem;
-                background: rgba(255,255,255,0.03);
-                transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.24s ease, transform 0.18s ease;
+                background: rgba(20, 22, 26, 0.85);
+                transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
             }
             .reco-card:hover {
-                border-color: rgba(226, 55, 68, 0.35);
-                background: rgba(255,255,255,0.055);
-                box-shadow: 0 8px 28px rgba(0,0,0,0.25);
-                transform: translateY(-2px);
+                border-color: rgba(139, 154, 110, 0.35);
+                background: rgba(26, 28, 32, 0.95);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             }
-            .reco-title { font-size: 1.15rem; font-weight: 600; margin: 0 0 0.35rem 0; color: #fafafa; }
-            .reco-meta { font-size: 0.88rem; color: #a1a1aa; margin-bottom: 0.5rem; }
-            .reco-reason { font-size: 0.95rem; line-height: 1.55; color: #d4d4d8; margin: 0; }
-            .reco-rank { color: #22c55e; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
+            .reco-title {
+                font-family: "Fraunces", Georgia, serif !important;
+                font-size: 1.2rem;
+                font-weight: 600;
+                margin: 0 0 0.35rem 0;
+                color: #f2f0ec !important;
+            }
+            .reco-meta { font-family: "Source Sans 3", sans-serif !important; font-size: 0.88rem; color: #a8b596 !important; margin-bottom: 0.5rem; }
+            .reco-reason { font-family: "Source Sans 3", sans-serif !important; font-size: 0.95rem; line-height: 1.55; color: #c8ccc0 !important; margin: 0; }
+            .reco-rank {
+                font-family: "Outfit", sans-serif !important;
+                color: var(--olive-muted) !important;
+                font-weight: 600 !important;
+                font-size: 0.72rem !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.08em !important;
+            }
         </style>
         """,
         unsafe_allow_html=True,

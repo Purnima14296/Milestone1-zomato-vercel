@@ -101,6 +101,13 @@ App: http://localhost:3000 — set `NEXT_PUBLIC_API_URL` in `frontend/.env.local
 
 Implementation READMEs: `backend/README.md`, `frontend/README.md`.
 
+## 🌐 Production deployment (Phase 9)
+
+- **Backend** → Render (FastAPI)
+- **Frontend** → Vercel (Next.js)
+
+Full checklist: **`../DEPLOYMENT.md`** (optional `render.yaml` blueprint).
+
 ## 📝 File Alignment
 
 All files are properly aligned and readable:
@@ -112,7 +119,7 @@ All files are properly aligned and readable:
 
 ## 🛠️ Development Notes
 
-- **Phases 1–6**: documented under `Docs/phase1`–`Docs/phase6` and implemented under `src/zomato_rec/phase1`–`phase6` (plus `web_ui` for optional Streamlit-style input during development)
+- **Phases 1–6**: documented under `Docs/phase1`–`Docs/phase6` and implemented under `src/zomato_rec/phase1`–`phase6`
 - **Phases 7–8**: architecture in `Docs/phase_wise_architecture.md`; phase entry points in `Docs/phase7/README.md` and `Docs/phase8/README.md`. Runnable code typically lives in sibling apps such as **`backend/`** (FastAPI) and **`frontend/`** (Next.js)
 - Keep **secrets** (Groq, DB) on the server (Phase 7) only; the browser client must never embed API keys
 

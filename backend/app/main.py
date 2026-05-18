@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 import time
 import uuid
 from collections import defaultdict
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -11,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from backend.app.env import apply_render_defaults, is_render, render_service_url
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -21,7 +24,13 @@ from backend.app.pipeline import (
 from backend.app.schemas import RecommendationRequest
 from zomato_rec.config import Settings
 
-load_dotenv(repo_root() / ".env")
+logger = logging.getLogger("zomato_rec.api")
+
+_env_path = repo_root() / ".env"
+if _env_path.is_file():
+    load_dotenv(_env_path)
+
+apply_render_defaults()
 
 
 def _package_version() -> str:
@@ -89,10 +98,29 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    from zomato_rec.logging_config import configure_logging
+
+    configure_logging(Settings().log_level)
+    ds = default_dataset_path()
+    if ds.is_file():
+        logger.info("Dataset ready: %s", ds)
+    else:
+        logger.warning(
+            "Processed dataset missing at %s — /api/recommendations will return 503 until ingest completes",
+            ds,
+        )
+    if is_render():
+        logger.info("Running on Render; service URL=%s", render_service_url() or "(pending)")
+    yield
+
+
 app = FastAPI(
     title="Zomato Recommendation API",
     description="Phase 7 — REST layer over Phases 2–4 (see Docs/phase_wise_architecture.md).",
     version=_package_version(),
+    lifespan=_lifespan,
 )
 
 app.add_middleware(RequestIdMiddleware)
@@ -108,17 +136,35 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root() -> dict:
+    return {
+        "service": "zomato-recommendation-api",
+        "health": "/api/health",
+        "docs": "/docs",
+    }
+
+
 @app.get("/api/health")
 def health() -> dict:
     settings = Settings()
     ds = default_dataset_path()
-    return {
+    cors_origins = _cors_origins()
+    payload = {
         "status": "ok",
         "dataset_path": str(ds),
         "dataset_ok": ds.is_file(),
         "groq_configured": bool(settings.groq_api_key),
         "groq_model": settings.groq_model,
+        "render": is_render(),
+        "cors_origins_count": len(cors_origins),
     }
+    if is_render():
+        payload["service_url"] = render_service_url()
+    if is_render() and not cors_origins:
+        payload["status"] = "degraded"
+        payload["warning"] = "API_CORS_ORIGINS is empty; set your Vercel URL on Render"
+    return payload
 
 
 @app.get("/api/metadata")

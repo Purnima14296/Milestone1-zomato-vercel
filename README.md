@@ -46,15 +46,7 @@ python -m zomato_rec.phase1.ingest
 
 Collect validated user preferences and save them to `storage/preferences.json`:
 
-#### Web UI (recommended)
-
-Run the basic web UI (this is the primary input method):
-
-```bash
-streamlit run src/zomato_rec/web_ui/app.py
-```
-
-#### CLI (optional)
+#### CLI
 
 ```bash
 python -m zomato_rec.phase2.collect --interactive
@@ -112,26 +104,9 @@ Open http://localhost:3000 . Set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` 
 
 See `backend/README.md` and `frontend/README.md` for details.
 
-### Phase 9 — Streamlit (hosted Python UI)
+### Production deployment (Render + Vercel)
 
-The Streamlit app runs **Phases 2 → 4 in-process** (same engine as `backend.app.pipeline.run_recommendations`), so users get full recommendations without the Next.js + FastAPI stack.
+- **Backend (FastAPI)** → [Render](https://render.com)
+- **Frontend (Next.js)** → [Vercel](https://vercel.com)
 
-**Local**
-
-```bash
-streamlit run streamlit_app.py
-```
-
-(or `streamlit run src/zomato_rec/web_ui/app.py` — same app.)
-
-Use repo root as the working directory. For **Streamlit Cloud**, use the in-app **Prepare dataset from Hugging Face** button the first time (or run Phase 1 locally to create `data/processed/restaurants.parquet`). Set `GROQ_API_KEY` in `.env` or copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and fill values.
-
-**Streamlit Community Cloud (free tier)**
-
-1. Push the repo to GitHub.
-2. Create a new app → **Main file path:** `streamlit_app.py` (repo root). You can also use `src/zomato_rec/web_ui/app.py` if you prefer.
-3. Python packages: use the repo-root **`requirements.txt`** (Streamlit’s default).
-4. **Secrets** (app settings): at minimum `GROQ_API_KEY`. Optional: `GROQ_MODEL`, `ZOMATO_PROCESSED_DATASET` (absolute path if you mount or fetch data elsewhere).
-5. **Dataset:** `data/` is gitignored, so Streamlit Cloud starts **without** `restaurants.parquet`. The app shows **Prepare dataset from Hugging Face** — click it once per fresh machine (first run ~1–4 minutes). Free-tier apps may lose the file after long idle periods; run the button again if recommendations fail. Alternatively commit/mount Parquet or set **`ZOMATO_PROCESSED_DATASET`** in secrets.
-
-Cold starts on the free tier are normal; first model request may take tens of seconds.
+Step-by-step checklist: **`DEPLOYMENT.md`**.

@@ -150,20 +150,17 @@ A **dedicated web client** that talks only to Phase 7 over HTTPS (or local dev p
 
 ---
 
-### Phase 9 — Deployment: Streamlit (Hosted Python UI)
+### Phase 9 — Production deployment (Render + Vercel)
 
-Ships the **interactive Python UI** as a managed Streamlit app so users can run preferences and view recommendations without installing the repo locally.
+Ships the **Phase 7–8 web stack** to managed hosts: FastAPI on **Render**, Next.js on **Vercel**.
 
-- **App entry**: `streamlit_app.py` (repo root, for Streamlit Cloud) or `streamlit run src/zomato_rec/web_ui/app.py` (see `README.md` for local parity).
-- **Platform (free tier)**: **Streamlit Community Cloud** — connect a GitHub repo, set the main file path to **`streamlit_app.py`** (or `src/zomato_rec/web_ui/app.py`), use repo-root `requirements.txt`, and deploy from the default branch.
-- **Secrets & config** (Cloud “Secrets” or equivalent):
-  - `GROQ_API_KEY` and any other keys required by `Settings` / the LLM gateway (Phase 4)
-  - optional: dataset path overrides if the hosted runtime does not mirror local `data/processed/`
-- **Artifacts**: ensure the **processed dataset** (Phase 1 output, e.g. Parquet under `data/processed/`) exists on the host—use the Streamlit app’s **Prepare dataset from Hugging Face** control on first deploy, commit for small demos, or fetch from private/object storage for larger assets.
-- **Scope**: Streamlit talks **in-process** to the same Python modules as Phases 2–5 (preferences → retrieval → LLM → render); it is an alternative surface to Phase 7/8, not a replacement for the REST API when you need mobile clients or strict JSON contracts.
-- **Operations**: pin dependency versions (`pyproject.toml` / lockfile), document cold starts, and keep logs/metrics aligned with Phase 6 where possible.
+- **Backend (Render)**: Web Service at repo root; `requirements.txt` installs `pip install -e ".[api]"`; start command `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`.
+- **Frontend (Vercel)**: Project root `frontend/`; `NEXT_PUBLIC_API_URL` points at the Render API URL (HTTPS).
+- **Secrets (Render only)**: `GROQ_API_KEY`, `GROQ_MODEL`, `API_CORS_ORIGINS` (include the Vercel production origin), optional `ZOMATO_PROCESSED_DATASET`.
+- **Dataset**: `data/` is gitignored — run Phase 1 on a **Render persistent disk**, bake Parquet in the build step, or host the file and set `ZOMATO_PROCESSED_DATASET` to an absolute path on the service.
+- **CORS**: production must list the exact Vercel URL; set `API_CORS_DISABLE_LOCALHOST_REGEX=1` on Render so only `API_CORS_ORIGINS` are allowed.
 
-**Deliverable**: a public or team-only Streamlit URL that runs the recommendation journey end-to-end with secrets outside the repo.
+**Deliverable**: public HTTPS URLs for API + UI; full checklist in repo-root **`DEPLOYMENT.md`** (optional `render.yaml` blueprint).
 
 ---
 
@@ -181,12 +178,12 @@ Browser (Phase 8)  --HTTPS-->  Backend API (Phase 7)  -->  Phases 2 → 3 → 4 
                                       +--> Phase 1 dataset (read)  +  optional Phase 6 telemetry
 ```
 
-### Streamlit path (Phase 9)
+### Production path (Phase 9)
 
 ```text
-Browser  --HTTPS-->  Streamlit Cloud (Phase 9)  -->  in-process: Phases 2 → 3 → 4 → 5-style render
-                              |
-                              +--> Phase 1 dataset (read)  +  secrets (e.g. Groq)
+Browser  --HTTPS-->  Vercel (Phase 8)  --HTTPS-->  Render (Phase 7)  -->  Phases 2 → 3 → 4  -->  JSON
+                                                          |
+                                                          +--> Phase 1 dataset (read)  +  Groq (server-side)
 ```
 
 ### Offline / CLI path (unchanged)

@@ -20,3 +20,7 @@ Open http://localhost:3000 . The UI calls the Phase 7 API; set `NEXT_PUBLIC_API_
 | `npm run start` | Run production build |
 
 No Groq or other secrets belong in this app — only the public API base URL.
+
+## Production (Vercel)
+
+See **`../DEPLOYMENT.md`**. Set root directory to `frontend/` and `NEXT_PUBLIC_API_URL` to your Render API URL.

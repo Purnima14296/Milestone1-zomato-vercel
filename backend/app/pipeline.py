@@ -14,6 +14,7 @@ from zomato_rec.phase2.models import BudgetRange, UserPreferences
 from zomato_rec.phase3.retrieve import load_processed_dataset, run_phase3
 from zomato_rec.phase4.recommend import run_phase4
 
+from backend.app.env import is_render
 from backend.app.paths import repo_root
 from backend.app.schemas import (
     PreferencesIn,
@@ -36,11 +37,16 @@ def _to_user_preferences(p: PreferencesIn) -> UserPreferences:
     )
 
 
+_RENDER_DISK_DEFAULT = Path("/var/data/restaurants.parquet")
+
+
 def default_dataset_path() -> Path:
-    """Resolved Parquet path; override with env `ZOMATO_PROCESSED_DATASET` (e.g. Streamlit Cloud / CI)."""
+    """Resolved Parquet path; override with env `ZOMATO_PROCESSED_DATASET` (e.g. Render disk / CI)."""
     override = os.environ.get("ZOMATO_PROCESSED_DATASET", "").strip()
     if override:
         return Path(override)
+    if is_render() and _RENDER_DISK_DEFAULT.is_file():
+        return _RENDER_DISK_DEFAULT
     root = repo_root()
     return root / "data" / "processed" / "restaurants.parquet"
 

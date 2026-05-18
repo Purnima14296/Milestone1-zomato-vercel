@@ -39,7 +39,7 @@ Railway (uvicorn → FastAPI)
 
 | Setting | Value |
 |---------|--------|
-| **Build** | Nixpacks `pip install ".[api]"` (see `nixpacks.toml`; do not use `pip install -e .` or a custom `buildCommand` without pip) |
+| **Build** | Nixpacks `python3 -m pip install ".[api]"` (see `nixpacks.toml`; never call bare `pip` on Railway) |
 | **Start** | `python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT` |
 | **Health check** | `/api/health` |
 
@@ -69,8 +69,9 @@ API returns **503** without `restaurants.parquet`.
 1. Add a **Volume**, mount at `/data`.
 2. One-time in Railway **Shell**:
    ```bash
-   pip install -r requirements.txt
-   python -m zomato_rec.phase1.ingest --out /data/processed/restaurants.parquet
+   python3 -m pip install -r requirements.txt
+   python3 -m pip install ".[api]"
+   python3 -m zomato_rec.phase1.ingest --out /data/processed/restaurants.parquet
    ```
 3. Set `ZOMATO_PROCESSED_DATASET=/data/processed/restaurants.parquet`.
 
@@ -86,7 +87,7 @@ Set Railway **build command** to:
 bash scripts/railway_build.sh
 ```
 
-Runs `pip install` and Phase 1 ingest into `data/processed/` (ephemeral unless you use a volume). Skip ingest when a volume is used: set `RAILWAY_SKIP_DATASET_INGEST=1` and `ZOMATO_PROCESSED_DATASET=/data/processed/restaurants.parquet`.
+Runs `python3 -m pip install` and Phase 1 ingest into `data/processed/` (ephemeral unless you use a volume). Skip ingest when a volume is used: set `RAILWAY_SKIP_DATASET_INGEST=1` and `ZOMATO_PROCESSED_DATASET=/data/processed/restaurants.parquet`.
 
 ### 1.4 Verify Railway
 
@@ -178,6 +179,7 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
+| Build: `pip: command not found` | Use `python3 -m pip` in `nixpacks.toml` (already in repo); clear custom build command |
 | Build: `No module named pip` | Remove custom Railway **build command**; use repo `nixpacks.toml` only |
 
 ---
@@ -189,7 +191,7 @@ npm run dev
 | `railway.toml` | Railway deploy defaults |
 | `nixpacks.toml` / `Procfile` | Build / process |
 | `requirements.txt` | Flat dependency list (reference / fallback) |
-| `nixpacks.toml` | Nixpacks install phase (`pip` + `pip install ".[api]"`) |
+| `nixpacks.toml` | Nixpacks install phase (`python3 -m pip install ".[api]"`) |
 | `scripts/railway_install.sh` | Manual/local install helper (optional) |
 | `runtime.txt` | Python 3.12 |
 | `backend/app/railway_env.py` | Railway + Vercel CORS |

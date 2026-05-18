@@ -1,11 +1,11 @@
-# Nixpacks (Railway) — use default Python provider (includes pip).
-# Do not override nixPkgs with python312-only or pip will be missing.
+# Nixpacks (Railway) — always use `python -m pip` (pip may not be on PATH).
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.12"
 
 [phases.install]
 cmds = [
-  "pip install --upgrade pip setuptools wheel",
-  "pip install \".[api]\"",
+  "python3 -m ensurepip --upgrade",
+  "python3 -m pip install --upgrade pip setuptools wheel",
+  "python3 -m pip install \".[api]\"",
 ]

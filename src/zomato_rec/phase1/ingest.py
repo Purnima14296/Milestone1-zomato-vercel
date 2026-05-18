@@ -6,6 +6,7 @@ import logging
 import os
 from dataclasses import asdict, dataclass
 
+import pandas as pd
 from datasets import load_dataset
 
 from zomato_rec.config import Settings
@@ -50,17 +51,46 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _ingest_chunk_size() -> int:
+    raw = os.environ.get("ZOMATO_INGEST_CHUNK_SIZE", "8000").strip()
+    try:
+        size = int(raw)
+    except ValueError:
+        size = 8000
+    return max(1000, size)
+
+
 def run(dataset_id: str, split: str, out_path: str, out_format: str, report_path: str) -> IngestReport:
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
 
+    chunk_size = _ingest_chunk_size()
     logger.info("Loading dataset from Hugging Face: %s (split=%s)", dataset_id, split)
     ds = load_dataset(dataset_id, split=split)
-    raw_df = ds.to_pandas()
-    logger.info("Loaded raw rows=%d cols=%d", len(raw_df), len(raw_df.columns))
+    total_rows = len(ds)
+    logger.info("Loaded dataset rows=%d (chunk_size=%d)", total_rows, chunk_size)
 
-    processed_df, mapping = build_processed_df(raw_df)
-    logger.info("Processed rows=%d (dropped=%d)", len(processed_df), len(raw_df) - len(processed_df))
+    mapping: dict[str, str | None] | None = None
+    processed_parts: list[pd.DataFrame] = []
+    raw_rows = 0
+
+    for start in range(0, total_rows, chunk_size):
+        end = min(start + chunk_size, total_rows)
+        raw_df = ds.select(range(start, end)).to_pandas()
+        raw_rows += len(raw_df)
+        chunk_df, chunk_mapping = build_processed_df(raw_df)
+        if mapping is None:
+            mapping = chunk_mapping
+        if not chunk_df.empty:
+            processed_parts.append(chunk_df)
+        logger.info("Ingest progress: %d/%d raw rows", end, total_rows)
+
+    if processed_parts:
+        processed_df = pd.concat(processed_parts, ignore_index=True)
+    else:
+        processed_df = pd.DataFrame()
+    mapping = mapping or {}
+    logger.info("Processed rows=%d (dropped=%d)", len(processed_df), raw_rows - len(processed_df))
     logger.info("Inferred column mapping: %s", mapping)
 
     if out_format == "parquet":
@@ -71,7 +101,7 @@ def run(dataset_id: str, split: str, out_path: str, out_format: str, report_path
     rep = IngestReport(
         dataset_id=dataset_id,
         split=split,
-        raw_rows=len(raw_df),
+        raw_rows=raw_rows,
         processed_rows=len(processed_df),
         inferred_mapping=mapping,
         output_path=out_path,

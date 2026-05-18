@@ -48,6 +48,10 @@ def apply_railway_defaults() -> None:
             "Set API_CORS_ORIGINS to your Vercel URL on Railway, or keep API_CORS_ALLOW_VERCEL=1 (default)."
         )
 
+    # Prefer build-baked parquet or a /data volume; runtime HF ingest can OOM on small plans.
+    if not os.getenv("ZOMATO_PROCESSED_DATASET", "").strip():
+        os.environ.setdefault("ZOMATO_PROCESSED_DATASET", "/app/data/processed/restaurants.parquet")
+
 
 def auto_ingest_if_missing() -> bool:
     return os.getenv("ZOMATO_AUTO_INGEST_IF_MISSING", "").strip().lower() in {"1", "true", "yes"}

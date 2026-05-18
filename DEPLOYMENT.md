@@ -58,7 +58,8 @@ Fallback: Nixpacks (`nixpacks.toml` with `providers = ["python"]`) — do **not*
 | `API_CORS_ALLOW_VERCEL` | No | `1` (default) — allows `https://*.vercel.app` |
 | `API_CORS_DISABLE_LOCALHOST_REGEX` | No | Auto-set to `1` on Railway |
 | `ZOMATO_PROCESSED_DATASET` | With volume | `/data/processed/restaurants.parquet` |
-| `ZOMATO_AUTO_INGEST_IF_MISSING` | Optional | `1` — Phase 1 ingest on startup if missing |
+| `ZOMATO_AUTO_INGEST_IF_MISSING` | No (avoid on Railway) | Dataset is baked at **Docker build**; runtime ingest can OOM. Use `1` only with a `/data` volume. |
+| `HF_TOKEN` | Optional | Hugging Face token for faster dataset download at build time |
 | `RAILWAY_SKIP_DATASET_INGEST` | Option C + volume | `1` — skip ingest in `scripts/railway_build.sh` |
 | `HF_DATASET_ID` / `HF_DATASET_SPLIT` | No | For ingest |
 | `LOG_LEVEL` | No | `INFO` |
@@ -186,7 +187,7 @@ npm run dev
 | Cold start | Railway free tier may sleep; wait and retry |
 | Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |
 | URL won’t load / connection refused | Logs must show `Railway start: binding 0.0.0.0:<PORT>` and `Uvicorn running on http://0.0.0.0:<PORT>` with the **same** `<PORT>` as Railway **Variables** → `PORT`. Enable **Public Networking** and generate a domain. |
-| Crash loop during HF ingest | App serves `/api/health` immediately (`status: starting`); ingest runs in background. `healthcheckTimeout = 600` in `railway.toml`. |
+| Crash loop during HF ingest | Dataset is **baked in the Docker image** at build time (`Dockerfile`). Remove `ZOMATO_AUTO_INGEST_IF_MISSING=1` from Railway vars. Optional: mount a volume at `/data` and set `ZOMATO_PROCESSED_DATASET=/data/processed/restaurants.parquet`. |
 | Build: `ensurepip` failed | Use **Dockerfile** builder (`railway.toml`); do not use `python3 -m ensurepip` on Nix |
 | Build: `pip: command not found` | Use `python -m pip` or Dockerfile (not bare `pip`) |
 | Build: `No module named pip` | Switch builder to **DOCKERFILE**; clear custom build command in Railway UI |

@@ -41,7 +41,7 @@ Railway (uvicorn → FastAPI)
 |---------|--------|
 | **Builder** | `DOCKERFILE` (see `railway.toml`) |
 | **Build** | `docker build` using root `Dockerfile` — `python -m pip install ".[api]"` |
-| **Start** | Dockerfile `CMD` via `sh -c` with `${PORT:-8000}` (do not override with bare `$PORT` in Railway UI) |
+| **Start** | Dockerfile `CMD` via `sh -c` with `${PORT:-8080}` (uses Railway’s `PORT`; do not override with bare `$PORT` in Railway UI) |
 | **Health check** | `/api/health` |
 
 Fallback: Nixpacks (`nixpacks.toml` with `providers = ["python"]`) — do **not** use `ensurepip` on Railway/Nix.

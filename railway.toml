@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "bash scripts/railway_install.sh"
+# Install via nixpacks.toml [phases.install] (includes pip). Do not set buildCommand here.
 
 [deploy]
 startCommand = "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"

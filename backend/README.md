@@ -23,4 +23,4 @@ Environment:
 | `RAILWAY_SKIP_DATASET_INGEST` | Set `1` when using volume + `scripts/railway_build.sh` as build command |
 | `GROQ_API_KEY` / `GROQ_MODEL` | Loaded via `zomato_rec.config.Settings` from env / `.env` |
 
-**Railway**: `railway.toml` — build `bash scripts/railway_install.sh`, start uvicorn, health `GET /api/health`. Optional dataset build: `bash scripts/railway_build.sh`.
+**Railway**: `railway.toml` + `nixpacks.toml` — Nixpacks installs deps; start uvicorn; health `GET /api/health`. Optional dataset build: `bash scripts/railway_build.sh`.

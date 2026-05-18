@@ -39,7 +39,7 @@ Railway (uvicorn → FastAPI)
 
 | Setting | Value |
 |---------|--------|
-| **Build** | `bash scripts/railway_install.sh` (via Nixpacks; do not use `pip install -e .` on Railway) |
+| **Build** | Nixpacks `pip install ".[api]"` (see `nixpacks.toml`; do not use `pip install -e .` or a custom `buildCommand` without pip) |
 | **Start** | `python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT` |
 | **Health check** | `/api/health` |
 
@@ -178,6 +178,7 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
+| Build: `No module named pip` | Remove custom Railway **build command**; use repo `nixpacks.toml` only |
 
 ---
 
@@ -188,7 +189,8 @@ npm run dev
 | `railway.toml` | Railway deploy defaults |
 | `nixpacks.toml` / `Procfile` | Build / process |
 | `requirements.txt` | Flat dependency list (reference / fallback) |
-| `scripts/railway_install.sh` | Railway build: `pip install ".[api]"` (non-editable) |
+| `nixpacks.toml` | Nixpacks install phase (`pip` + `pip install ".[api]"`) |
+| `scripts/railway_install.sh` | Manual/local install helper (optional) |
 | `runtime.txt` | Python 3.12 |
 | `backend/app/railway_env.py` | Railway + Vercel CORS |
 | `backend/app/dataset.py` | Dataset path + optional ingest |

@@ -1,10 +1,11 @@
-# Nixpacks (Railway) — https://nixpacks.com/docs/configuration/file
-
-[phases.setup]
-nixPkgs = ["python312", "bash"]
-
-[phases.install]
-cmds = ["bash scripts/railway_install.sh"]
+# Nixpacks (Railway) — use default Python provider (includes pip).
+# Do not override nixPkgs with python312-only or pip will be missing.
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.12"
+
+[phases.install]
+cmds = [
+  "pip install --upgrade pip setuptools wheel",
+  "pip install \".[api]\"",
+]

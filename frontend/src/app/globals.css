@@ -11,7 +11,7 @@ body {
 }
 
 /* Range slider — green active track (filled portion via inline gradient in component) */
-input[type="range"].budget-slider {
+input[type="range"].range-slider {
   -webkit-appearance: none;
   appearance: none;
   height: 6px;
@@ -19,7 +19,7 @@ input[type="range"].budget-slider {
   outline: none;
 }
 
-input[type="range"].budget-slider::-webkit-slider-thumb {
+input[type="range"].range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 18px;
@@ -32,7 +32,7 @@ input[type="range"].budget-slider::-webkit-slider-thumb {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-input[type="range"].budget-slider::-moz-range-thumb {
+input[type="range"].range-slider::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -41,12 +41,12 @@ input[type="range"].budget-slider::-moz-range-thumb {
   cursor: pointer;
 }
 
-input[type="range"].budget-slider::-webkit-slider-runnable-track {
+input[type="range"].range-slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 9999px;
 }
 
-input[type="range"].budget-slider::-moz-range-track {
+input[type="range"].range-slider::-moz-range-track {
   height: 6px;
   border-radius: 9999px;
   background: #333;

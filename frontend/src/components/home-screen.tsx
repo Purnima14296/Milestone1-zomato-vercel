@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { MapPin, Sparkles, Star, UtensilsCrossed } from "lucide-react";
+import { MapPin, Sparkles, UtensilsCrossed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FoodHero } from "@/components/food-hero";
 import { SiteFooter } from "@/components/site-footer";
@@ -26,12 +26,8 @@ const FALLBACK_LOCATIONS = [
   "Sarjapur Road",
   "Whitefield",
 ] as const;
-const RATING_OPTIONS = [
-  { value: "3", label: "3.0+" },
-  { value: "3.5", label: "3.5+" },
-  { value: "4", label: "4.0+" },
-  { value: "4.5", label: "4.5+" },
-] as const;
+const RATING_SLIDER_MAX = 5;
+const RATING_SLIDER_STEP = 0.5;
 
 function formatCuisines(c: unknown): string {
   if (Array.isArray(c)) return c.map(String).join(", ");
@@ -39,10 +35,31 @@ function formatCuisines(c: unknown): string {
   return String(c);
 }
 
+function parseBudgetRange(input: string): { min: number; max: number } | null {
+  const raw = input.trim().replace(/,/g, "");
+  if (!raw) return null;
+
+  const rangeMatch = raw.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+  if (rangeMatch) {
+    let min = Number(rangeMatch[1]);
+    let max = Number(rangeMatch[2]);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) return null;
+    if (min > max) [min, max] = [max, min];
+    return { min, max };
+  }
+
+  if (/^\d+$/.test(raw)) {
+    const max = Number(raw);
+    return Number.isFinite(max) && max > 0 ? { min: 0, max } : null;
+  }
+
+  return null;
+}
+
 export function HomeScreen() {
   const [location, setLocation] = useState("");
-  const [budgetMax, setBudgetMax] = useState(1500);
-  const [minRating, setMinRating] = useState("");
+  const [budgetInput, setBudgetInput] = useState("500-1500");
+  const [minRating, setMinRating] = useState(0);
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [cuisineDraft, setCuisineDraft] = useState("");
   const [extra, setExtra] = useState("");
@@ -89,11 +106,6 @@ export function HomeScreen() {
     [locationOptions],
   );
 
-  const ratingSelectOptions = useMemo(
-    () => [{ value: "", label: "Any" }, ...RATING_OPTIONS.map((o) => ({ value: o.value, label: o.label }))],
-    [],
-  );
-
   useEffect(() => {
     if (locationOptions.length === 0) return;
     const cur = location.trim();
@@ -104,7 +116,16 @@ export function HomeScreen() {
     }
   }, [locationOptions, location]);
 
-  const budgetPct = Math.min(100, Math.max(0, (budgetMax / 5000) * 100));
+  const ratingPct = Math.min(100, Math.max(0, (minRating / RATING_SLIDER_MAX) * 100));
+
+  function ratingLabel(value: number): string {
+    if (value <= 0) return "Any";
+    return `${value.toFixed(1)}+`;
+  }
+
+  function sanitizeBudgetInput(value: string): string {
+    return value.replace(/[^\d\-–\s]/g, "");
+  }
 
   function addCuisine(name: string) {
     const t = name.trim();
@@ -130,13 +151,13 @@ export function HomeScreen() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const mr = minRating.trim() ? Number(minRating) : null;
+    const budget = parseBudgetRange(budgetInput);
     mutation.mutate({
       preferences: {
         location: location.trim(),
-        budget: { min: 0, max: budgetMax },
+        budget: budget != null ? { min: budget.min, max: budget.max } : null,
         cuisines: [...cuisines],
-        minimum_rating: mr != null && Number.isFinite(mr) ? mr : null,
+        minimum_rating: minRating > 0 ? minRating : null,
         additional_preferences: extra.trim() || null,
       },
       top_k: 5,
@@ -180,55 +201,68 @@ export function HomeScreen() {
                 <label htmlFor="minRating" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
                   Minimum rating
                 </label>
-                <ThemedSelect
-                  id="minRating"
-                  value={minRating}
-                  onChange={setMinRating}
-                  options={ratingSelectOptions}
-                  leading={<Star className="h-5 w-5 text-brand-green" aria-hidden />}
-                />
+                <div className="relative pt-2">
+                  <output
+                    className="pointer-events-none absolute -top-1 z-10 min-w-[3.5rem] -translate-x-1/2 rounded-lg bg-brand-green px-2.5 py-1 text-center text-xs font-bold text-zomato-dark shadow-lg"
+                    style={{ left: `${ratingPct}%` }}
+                    htmlFor="minRating"
+                  >
+                    {ratingLabel(minRating)}
+                  </output>
+                  <input
+                    id="minRating"
+                    name="minRating"
+                    type="range"
+                    min={0}
+                    max={RATING_SLIDER_MAX}
+                    step={RATING_SLIDER_STEP}
+                    value={minRating}
+                    onChange={(e) => setMinRating(Number(e.target.value))}
+                    className="range-slider w-full"
+                    style={{
+                      background: `linear-gradient(to right, #26D367 0%, #26D367 ${ratingPct}%, #2A2A2A ${ratingPct}%, #2A2A2A 100%)`,
+                    }}
+                    aria-valuemin={0}
+                    aria-valuemax={RATING_SLIDER_MAX}
+                    aria-valuenow={minRating}
+                    aria-valuetext={ratingLabel(minRating)}
+                  />
+                  <div className="mt-2 flex justify-between text-[11px] font-medium text-zinc-600">
+                    <span>Any</span>
+                    <span>3.0</span>
+                    <span>3.5</span>
+                    <span>4.0</span>
+                    <span>4.5</span>
+                    <span>5.0</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div>
               <label htmlFor="budget" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
-                Budget max (for two)
+                Budget (for two)
               </label>
-              <div className="relative pt-2">
-                <output
-                  className="pointer-events-none absolute -top-1 z-10 min-w-[3.5rem] -translate-x-1/2 rounded-lg bg-brand-green px-2.5 py-1 text-center text-xs font-bold text-zomato-dark shadow-lg"
-                  style={{ left: `${budgetPct}%` }}
-                  htmlFor="budget"
-                >
-                  ₹{budgetMax}
-                </output>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-3.5 text-sm font-medium text-zinc-500" aria-hidden>
+                  ₹
+                </span>
                 <input
                   id="budget"
                   name="budget"
-                  type="range"
-                  min={0}
-                  max={5000}
-                  step={100}
-                  value={budgetMax}
-                  onChange={(e) => setBudgetMax(Number(e.target.value))}
-                  className="budget-slider w-full"
-                  style={{
-                    background: `linear-gradient(to right, #26D367 0%, #26D367 ${budgetPct}%, #2A2A2A ${budgetPct}%, #2A2A2A 100%)`,
-                  }}
-                  aria-valuemin={0}
-                  aria-valuemax={5000}
-                  aria-valuenow={budgetMax}
-                  aria-valuetext={`₹${budgetMax}`}
+                  type="text"
+                  inputMode="text"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-zomato-border bg-zomato-dark py-3.5 pl-8 pr-4 text-sm text-white outline-none ring-brand-green/30 transition placeholder:text-zinc-600 focus:border-brand-green focus:ring-2"
+                  placeholder="e.g. 500-2000 or 2000"
+                  value={budgetInput}
+                  onChange={(e) => setBudgetInput(sanitizeBudgetInput(e.target.value))}
+                  aria-describedby="budget-hint"
                 />
-                <div className="mt-2 flex justify-between text-[11px] font-medium text-zinc-600">
-                  <span>₹0</span>
-                  <span>₹1000</span>
-                  <span>₹2000</span>
-                  <span>₹3000</span>
-                  <span>₹4000</span>
-                  <span>₹5000</span>
-                </div>
               </div>
+              <p id="budget-hint" className="mt-1.5 text-[11px] text-zinc-600">
+                Type a range (500-2000) or a single max amount in rupees
+              </p>
             </div>
 
             <div>

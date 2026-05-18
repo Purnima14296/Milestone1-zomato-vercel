@@ -51,11 +51,21 @@ def _cors_origins() -> list[str]:
     return [o.strip() for o in raw.split(",") if o.strip()]
 
 
-def _cors_localhost_regex() -> str | None:
-    """Match any http(s) dev origin on localhost / 127.0.0.1 with any port (e.g. Next on :3001)."""
-    if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() in {"1", "true", "yes"}:
+def _cors_origin_regex() -> str | None:
+    """
+    Extra allowed origins beyond API_CORS_ORIGINS:
+    - localhost (dev) unless disabled
+    - *.vercel.app on Render (production + preview deploys) unless disabled
+    """
+    patterns: list[str] = []
+    if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() not in {"1", "true", "yes"}:
+        patterns.append(r"https?://(localhost|127\.0\.0\.1)(:\d+)?")
+    allow_vercel = os.getenv("API_CORS_ALLOW_VERCEL_REGEX", "1" if is_render() else "0").strip()
+    if allow_vercel not in {"0", "false", "no"}:
+        patterns.append(r"https://[\w.-]+\.vercel\.app")
+    if not patterns:
         return None
-    return r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    return "|".join(f"({p})" for p in patterns)
 
 
 class _SlidingWindowLimiter:
@@ -128,7 +138,7 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
-    allow_origin_regex=_cors_localhost_regex(),
+    allow_origin_regex=_cors_origin_regex(),
     # No cookies / auth on this API yet; false avoids extra CORS friction in browsers.
     allow_credentials=False,
     allow_methods=["*"],

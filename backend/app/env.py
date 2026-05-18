@@ -20,6 +20,8 @@ def apply_render_defaults() -> None:
         return
     if not os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip():
         os.environ["API_CORS_DISABLE_LOCALHOST_REGEX"] = "1"
+    if not os.getenv("API_CORS_ALLOW_VERCEL_REGEX", "").strip():
+        os.environ["API_CORS_ALLOW_VERCEL_REGEX"] = "1"
 
 
 def render_service_url() -> str | None:

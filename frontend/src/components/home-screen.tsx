@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemedSelect } from "@/components/themed-select";
 import { formatApiError, getApiBaseUrl, getHealth, getLocations, isApiConfigured, postRecommendations } from "@/lib/api";
+import { parseBudgetInput } from "@/lib/budget";
 import type { RecommendationResponse } from "@/lib/types";
 
 const QUICK_CUISINES = ["North Indian", "South Indian", "Korean", "Thai"] as const;
@@ -39,7 +40,8 @@ function formatCuisines(c: unknown): string {
 
 export function HomeScreen() {
   const [location, setLocation] = useState("");
-  const [budgetMax, setBudgetMax] = useState(1500);
+  const [budgetInput, setBudgetInput] = useState("1500");
+  const [budgetError, setBudgetError] = useState<string | null>(null);
   const [minRating, setMinRating] = useState("");
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [cuisineDraft, setCuisineDraft] = useState("");
@@ -98,8 +100,6 @@ export function HomeScreen() {
     }
   }, [locationOptions, location]);
 
-  const budgetPct = Math.min(100, Math.max(0, (budgetMax / 5000) * 100));
-
   function addCuisine(name: string) {
     const t = name.trim();
     if (!t) return;
@@ -124,11 +124,21 @@ export function HomeScreen() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const trimmedBudget = budgetInput.trim();
+    let budget = null;
+    if (trimmedBudget) {
+      budget = parseBudgetInput(trimmedBudget);
+      if (!budget) {
+        setBudgetError("Enter a number (e.g. 1500) or range (e.g. 500-800) for two people.");
+        return;
+      }
+    }
+    setBudgetError(null);
     const mr = minRating.trim() ? Number(minRating) : null;
     mutation.mutate({
       preferences: {
         location: location.trim(),
-        budget: { min: 0, max: budgetMax },
+        budget,
         cuisines: [...cuisines],
         minimum_rating: mr != null && Number.isFinite(mr) ? mr : null,
         additional_preferences: extra.trim() || null,
@@ -171,58 +181,46 @@ export function HomeScreen() {
               </div>
 
               <div className="md:col-span-1">
-                <label htmlFor="minRating" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
-                  Minimum rating
+                <label htmlFor="budget" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
+                  Budget for two <span className="font-normal normal-case text-zinc-600">(optional)</span>
                 </label>
-                <ThemedSelect
-                  id="minRating"
-                  value={minRating}
-                  onChange={setMinRating}
-                  options={ratingSelectOptions}
-                  leading={<Star className="h-5 w-5 text-brand-green" aria-hidden />}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="budget" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
-                Budget max (for two)
-              </label>
-              <div className="relative pt-2">
-                <output
-                  className="pointer-events-none absolute -top-1 z-10 min-w-[3.5rem] -translate-x-1/2 rounded-lg bg-brand-green px-2.5 py-1 text-center text-xs font-bold text-zomato-dark shadow-lg"
-                  style={{ left: `${budgetPct}%` }}
-                  htmlFor="budget"
-                >
-                  ₹{budgetMax}
-                </output>
                 <input
                   id="budget"
                   name="budget"
-                  type="range"
-                  min={0}
-                  max={5000}
-                  step={100}
-                  value={budgetMax}
-                  onChange={(e) => setBudgetMax(Number(e.target.value))}
-                  className="budget-slider w-full"
-                  style={{
-                    background: `linear-gradient(to right, #26D367 0%, #26D367 ${budgetPct}%, #2A2A2A ${budgetPct}%, #2A2A2A 100%)`,
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  className="w-full rounded-xl border border-zomato-border bg-zomato-dark px-4 py-3.5 text-sm text-white outline-none ring-brand-green/30 transition placeholder:text-zinc-600 focus:border-brand-green focus:ring-2"
+                  placeholder="e.g. 1500 or 500-800"
+                  value={budgetInput}
+                  onChange={(e) => {
+                    setBudgetInput(e.target.value);
+                    if (budgetError) setBudgetError(null);
                   }}
-                  aria-valuemin={0}
-                  aria-valuemax={5000}
-                  aria-valuenow={budgetMax}
-                  aria-valuetext={`₹${budgetMax}`}
+                  aria-invalid={budgetError != null}
+                  aria-describedby={budgetError ? "budget-error" : undefined}
                 />
-                <div className="mt-2 flex justify-between text-[11px] font-medium text-zinc-600">
-                  <span>₹0</span>
-                  <span>₹1000</span>
-                  <span>₹2000</span>
-                  <span>₹3000</span>
-                  <span>₹4000</span>
-                  <span>₹5000</span>
-                </div>
+                {budgetError ? (
+                  <p id="budget-error" className="mt-2 text-xs text-red-300" role="alert">
+                    {budgetError}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-zinc-600">Total spend for two in ₹ — single amount or min-max range.</p>
+                )}
               </div>
+            </div>
+
+            <div className="max-w-md">
+              <label htmlFor="minRating" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-zomato-muted">
+                Minimum rating
+              </label>
+              <ThemedSelect
+                id="minRating"
+                value={minRating}
+                onChange={setMinRating}
+                options={ratingSelectOptions}
+                leading={<Star className="h-5 w-5 text-brand-green" aria-hidden />}
+              />
             </div>
 
             <div>

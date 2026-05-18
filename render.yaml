@@ -23,6 +23,8 @@ services:
         value: train
       - key: API_CORS_DISABLE_LOCALHOST_REGEX
         value: "1"
+      - key: API_CORS_ALLOW_VERCEL_REGEX
+        value: "1"
       - key: API_CORS_ORIGINS
         sync: false
       - key: LOG_LEVEL

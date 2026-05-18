@@ -1,5 +1,5 @@
 /**
- * Public API base URL (Render in production, local uvicorn in dev).
+ * Public API base URL (Railway in production, local uvicorn in dev).
  * Set `NEXT_PUBLIC_API_URL` in Vercel → Environment Variables — see DEPLOYMENT.md.
  */
 export function getApiBaseUrl(): string {

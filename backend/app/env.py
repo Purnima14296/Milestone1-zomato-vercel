@@ -3,20 +3,18 @@ from __future__ import annotations
 import os
 
 
-def is_render() -> bool:
-    """True when the process runs on Render (Web Service or Shell)."""
-    if os.getenv("RENDER", "").strip().lower() in {"true", "1", "yes"}:
-        return True
-    return bool(os.getenv("RENDER_SERVICE_ID") or os.getenv("RENDER_EXTERNAL_URL"))
+def is_railway() -> bool:
+    """True when the process runs on Railway."""
+    return bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_PROJECT_ID"))
 
 
-def apply_render_defaults() -> None:
+def apply_production_defaults() -> None:
     """
-    Production-safe defaults on Render (only when the variable is unset).
+    Production-safe defaults on Railway (only when the variable is unset).
 
     Matches DEPLOYMENT.md: lock CORS to API_CORS_ORIGINS in production.
     """
-    if not is_render():
+    if not is_railway():
         return
     if not os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip():
         os.environ["API_CORS_DISABLE_LOCALHOST_REGEX"] = "1"
@@ -24,7 +22,9 @@ def apply_render_defaults() -> None:
         os.environ["API_CORS_ALLOW_VERCEL_REGEX"] = "1"
 
 
-def render_service_url() -> str | None:
-    """Public HTTPS URL assigned by Render (if available)."""
-    url = os.getenv("RENDER_EXTERNAL_URL", "").strip()
-    return url or None
+def public_service_url() -> str | None:
+    """Public HTTPS URL for this Railway service (if configured)."""
+    domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+    if domain:
+        return f"https://{domain}"
+    return None

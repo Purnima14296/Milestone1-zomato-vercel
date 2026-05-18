@@ -25,11 +25,11 @@ async function parseError(res: Response): Promise<string> {
 
 export function formatApiError(err: unknown): string {
   if (!isApiConfigured()) {
-    return "API URL is not configured. Set NEXT_PUBLIC_API_URL in Vercel to your Render service URL.";
+    return "API URL is not configured. Set NEXT_PUBLIC_API_URL in Vercel to your Railway service URL.";
   }
   if (err instanceof TypeError) {
     return (
-      "Cannot reach the API. Check NEXT_PUBLIC_API_URL on Vercel and API_CORS_ORIGINS on Render " +
+      "Cannot reach the API. Check NEXT_PUBLIC_API_URL on Vercel and API_CORS_ORIGINS on Railway " +
       `(must include this site’s origin). API: ${getApiBaseUrl()}`
     );
   }

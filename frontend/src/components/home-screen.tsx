@@ -295,7 +295,7 @@ export function HomeScreen() {
             {!isApiConfigured() && (
               <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
                 <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">NEXT_PUBLIC_API_URL</code> is not set. On
-                Vercel, add it under Environment Variables (your Render API URL, no trailing slash).
+                Vercel, add it under Environment Variables (your Railway API URL, no trailing slash).
               </p>
             )}
 
@@ -306,7 +306,7 @@ export function HomeScreen() {
                     Can&apos;t reach the API at{" "}
                     <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">{getApiBaseUrl()}</code>. Confirm{" "}
                     <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">NEXT_PUBLIC_API_URL</code> on Vercel
-                    and <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">API_CORS_ORIGINS</code> on Render
+                    and <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">API_CORS_ORIGINS</code> on Railway
                     (must include this site&apos;s origin).
                   </>
                 ) : (

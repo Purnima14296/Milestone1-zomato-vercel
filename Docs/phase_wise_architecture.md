@@ -150,17 +150,17 @@ A **dedicated web client** that talks only to Phase 7 over HTTPS (or local dev p
 
 ---
 
-### Phase 9 — Production deployment (Render + Vercel)
+### Phase 9 — Production deployment (Railway + Vercel)
 
-Ships the **Phase 7–8 web stack** to managed hosts: FastAPI on **Render**, Next.js on **Vercel**.
+Ships the **Phase 7–8 web stack** to managed hosts: FastAPI on **Railway**, Next.js on **Vercel**.
 
-- **Backend (Render)**: Web Service at repo root; `requirements.txt` installs `pip install -e ".[api]"`; start command `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`.
-- **Frontend (Vercel)**: Project root `frontend/`; `NEXT_PUBLIC_API_URL` points at the Render API URL (HTTPS).
-- **Secrets (Render only)**: `GROQ_API_KEY`, `GROQ_MODEL`, `API_CORS_ORIGINS` (include the Vercel production origin), optional `ZOMATO_PROCESSED_DATASET`.
-- **Dataset**: `data/` is gitignored — run Phase 1 on a **Render persistent disk**, bake Parquet in the build step, or host the file and set `ZOMATO_PROCESSED_DATASET` to an absolute path on the service.
-- **CORS**: production must list the exact Vercel URL; set `API_CORS_DISABLE_LOCALHOST_REGEX=1` on Render so only `API_CORS_ORIGINS` are allowed.
+- **Backend (Railway)**: Service at repo root; `railway.toml` + `scripts/railway_build.sh`; start `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`.
+- **Frontend (Vercel)**: Project root `frontend/`; `NEXT_PUBLIC_API_URL` points at the Railway API URL (HTTPS).
+- **Secrets (Railway only)**: `GROQ_API_KEY`, `GROQ_MODEL`, `API_CORS_ORIGINS` (include the Vercel production origin), optional `ZOMATO_PROCESSED_DATASET`.
+- **Dataset**: `data/` is gitignored — run Phase 1 on a **Railway volume**, bake Parquet in the build step, or host the file and set `ZOMATO_PROCESSED_DATASET`.
+- **CORS**: list the exact Vercel URL and/or use `API_CORS_ALLOW_VERCEL_REGEX=1` (default on Railway).
 
-**Deliverable**: public HTTPS URLs for API + UI; full checklist in repo-root **`DEPLOYMENT.md`** (optional `render.yaml` blueprint).
+**Deliverable**: public HTTPS URLs for API + UI; full checklist in repo-root **`DEPLOYMENT.md`**.
 
 ---
 
@@ -181,7 +181,7 @@ Browser (Phase 8)  --HTTPS-->  Backend API (Phase 7)  -->  Phases 2 → 3 → 4 
 ### Production path (Phase 9)
 
 ```text
-Browser  --HTTPS-->  Vercel (Phase 8)  --HTTPS-->  Render (Phase 7)  -->  Phases 2 → 3 → 4  -->  JSON
+Browser  --HTTPS-->  Vercel (Phase 8)  --HTTPS-->  Railway (Phase 7)  -->  Phases 2 → 3 → 4  -->  JSON
                                                           |
                                                           +--> Phase 1 dataset (read)  +  Groq (server-side)
 ```

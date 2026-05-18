@@ -104,9 +104,9 @@ Open http://localhost:3000 . Set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` 
 
 See `backend/README.md` and `frontend/README.md` for details.
 
-### Production deployment (Render + Vercel)
+### Production deployment (Railway + Vercel)
 
-- **Backend (FastAPI)** → [Render](https://render.com)
+- **Backend (FastAPI)** → [Railway](https://railway.com)
 - **Frontend (Next.js)** → [Vercel](https://vercel.com)
 
 Step-by-step checklist: **`DEPLOYMENT.md`**.

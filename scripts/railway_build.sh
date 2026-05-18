@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Render build — repo root. See DEPLOYMENT.md §1.3
+# Railway build — run from repository root. See DEPLOYMENT.md §1.3
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,9 +14,9 @@ if [[ -f "$OUT" ]]; then
   exit 0
 fi
 
-if [[ "${RENDER_SKIP_DATASET_INGEST:-}" =~ ^(1|true|yes)$ ]]; then
-  echo "==> RENDER_SKIP_DATASET_INGEST set and dataset missing at ${OUT}"
-  echo "    Run once in Render Shell: python -m zomato_rec.phase1.ingest --out ${OUT}"
+if [[ "${RAILWAY_SKIP_DATASET_INGEST:-}" =~ ^(1|true|yes)$ ]]; then
+  echo "==> RAILWAY_SKIP_DATASET_INGEST set and dataset missing at ${OUT}"
+  echo "    Run once via Railway shell: python -m zomato_rec.phase1.ingest --out ${OUT}"
   exit 0
 fi
 

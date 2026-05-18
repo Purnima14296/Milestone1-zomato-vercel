@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000 . The UI calls the Phase 7 API; set `NEXT_PUBLIC_API_URL` in `.env.local` if the backend is not at `http://127.0.0.1:8000`.
+Open http://localhost:3000 . Set `NEXT_PUBLIC_API_URL` in `.env.local` if the backend is not at `http://127.0.0.1:8000`.
 
 ## Scripts
 
@@ -29,17 +29,14 @@ Full checklist: **`../DEPLOYMENT.md`** §2.
 |----------------|--------|
 | **Root directory** | `frontend` |
 | **Framework** | Next.js |
-| **Build command** | `npm run build` (default; also in `vercel.json`) |
 
 ### Environment variables
 
 | Key | Environments | Value |
 |-----|----------------|--------|
-| `NEXT_PUBLIC_API_URL` | Production, Preview | `https://<your-render-service>.onrender.com` (no trailing slash) |
+| `NEXT_PUBLIC_API_URL` | Production, Preview | `https://<your-railway-domain>.up.railway.app` (no trailing slash) |
 
-Copy from `.env.example` or `.env.local.example`. The build **fails on Vercel** if `NEXT_PUBLIC_API_URL` is missing.
-
-After deploy, set Render `API_CORS_ORIGINS` to your Vercel URL (e.g. `https://your-app.vercel.app`) and redeploy Render.
+After deploy, set Railway `API_CORS_ORIGINS` to your Vercel URL if needed (`API_CORS_ALLOW_VERCEL_REGEX=1` is on by default on Railway).
 
 ### Files
 
@@ -48,4 +45,4 @@ After deploy, set Render `API_CORS_ORIGINS` to your Vercel URL (e.g. `https://yo
 | `vercel.json` | Install/build commands for Vercel |
 | `next.config.mjs` | Validates `NEXT_PUBLIC_API_URL` on Vercel builds |
 | `src/lib/env.ts` | Resolves API base URL |
-| `src/lib/api.ts` | Fetch helpers + CORS-friendly errors |
+| `src/lib/api.ts` | Fetch helpers + production error messages |

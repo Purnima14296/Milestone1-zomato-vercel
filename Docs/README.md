@@ -103,10 +103,10 @@ Implementation READMEs: `backend/README.md`, `frontend/README.md`.
 
 ## 🌐 Production deployment (Phase 9)
 
-- **Backend** → Render (FastAPI)
+- **Backend** → Railway (FastAPI)
 - **Frontend** → Vercel (Next.js)
 
-Full checklist: **`../DEPLOYMENT.md`** (optional `render.yaml` blueprint).
+Full checklist: **`../DEPLOYMENT.md`** (`railway.toml` at repo root).
 
 ## 📝 File Alignment
 

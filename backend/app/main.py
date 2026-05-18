@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.app.env import apply_render_defaults, is_render, render_service_url
+from backend.app.env import apply_production_defaults, is_railway, public_service_url
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -30,7 +30,7 @@ _env_path = repo_root() / ".env"
 if _env_path.is_file():
     load_dotenv(_env_path)
 
-apply_render_defaults()
+apply_production_defaults()
 
 
 def _package_version() -> str:
@@ -55,12 +55,12 @@ def _cors_origin_regex() -> str | None:
     """
     Extra allowed origins beyond API_CORS_ORIGINS:
     - localhost (dev) unless disabled
-    - *.vercel.app on Render (production + preview deploys) unless disabled
+    - *.vercel.app in production (Railway + preview deploys) unless disabled
     """
     patterns: list[str] = []
     if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() not in {"1", "true", "yes"}:
         patterns.append(r"https?://(localhost|127\.0\.0\.1)(:\d+)?")
-    allow_vercel = os.getenv("API_CORS_ALLOW_VERCEL_REGEX", "1" if is_render() else "0").strip()
+    allow_vercel = os.getenv("API_CORS_ALLOW_VERCEL_REGEX", "1" if is_railway() else "0").strip()
     if allow_vercel not in {"0", "false", "no"}:
         patterns.append(r"https://[\w.-]+\.vercel\.app")
     if not patterns:
@@ -121,8 +121,8 @@ async def _lifespan(_app: FastAPI):
             "Processed dataset missing at %s — /api/recommendations will return 503 until ingest completes",
             ds,
         )
-    if is_render():
-        logger.info("Running on Render; service URL=%s", render_service_url() or "(pending)")
+    if is_railway():
+        logger.info("Running on Railway; service URL=%s", public_service_url() or "(pending)")
     yield
 
 
@@ -166,14 +166,14 @@ def health() -> dict:
         "dataset_ok": ds.is_file(),
         "groq_configured": bool(settings.groq_api_key),
         "groq_model": settings.groq_model,
-        "render": is_render(),
+        "railway": is_railway(),
         "cors_origins_count": len(cors_origins),
     }
-    if is_render():
-        payload["service_url"] = render_service_url()
-    if is_render() and not cors_origins:
+    if is_railway():
+        payload["service_url"] = public_service_url()
+    if is_railway() and not cors_origins:
         payload["status"] = "degraded"
-        payload["warning"] = "API_CORS_ORIGINS is empty; set your Vercel URL on Render"
+        payload["warning"] = "API_CORS_ORIGINS is empty; set your Vercel URL on Railway"
     return payload
 
 

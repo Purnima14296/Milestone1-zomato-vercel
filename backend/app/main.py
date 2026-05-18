@@ -132,14 +132,15 @@ app = FastAPI(
 
 app.add_middleware(RequestIdMiddleware)
 app.add_middleware(RateLimitMiddleware)
+# CORS outermost — required when the browser calls Railway directly (e.g. local debugging).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
     allow_origin_regex=cors_origin_regex(),
-    # No cookies / auth on this API yet; false avoids extra CORS friction in browsers.
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 

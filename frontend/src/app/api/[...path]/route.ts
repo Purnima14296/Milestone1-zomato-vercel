@@ -22,7 +22,7 @@ async function proxy(req: NextRequest, pathSegments: string[]): Promise<NextResp
     );
   }
 
-  const subpath = pathSegments.map(encodeURIComponent).join("/");
+  const subpath = pathSegments.join("/");
   const target = `${base}/api/${subpath}${req.nextUrl.search}`;
 
   const headers = new Headers();

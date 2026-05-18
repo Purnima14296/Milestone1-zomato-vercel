@@ -136,7 +136,7 @@ Or use repo-root `vercel.json` (builds `frontend/` automatically).
 - No trailing slash.
 - **Redeploy after changing** — baked in at build time.
 - Vercel **route proxy** `frontend/src/app/api/[...path]/route.ts` forwards `/api/*` → Railway (`maxDuration` 60s).
-- Browser calls Railway **directly** when `NEXT_PUBLIC_API_URL` is set (avoids proxy 502 on slow Groq).
+- Browser uses **same-origin** `/api/*` on Vercel (proxied to Railway — avoids CORS). Do not call Railway from the browser directly.
 
 ### 2.3 Verify UI
 
@@ -185,7 +185,8 @@ npm run dev
 | `503` / no dataset | Volume + ingest, or `ZOMATO_AUTO_INGEST_IF_MISSING=1` |
 | CORS error | Set `API_CORS_ORIGINS` or keep `API_CORS_ALLOW_VERCEL=1` on Railway |
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
-| Vercel **502** on `/api/recommendations` | Set `NEXT_PUBLIC_API_URL` + `API_URL` to Railway URL; redeploy. Browser calls Railway directly; long POSTs need Pro for 60s proxy or use direct mode (default in browser). |
+| Vercel **502** on `/api/recommendations` | Set `NEXT_PUBLIC_API_URL` + `API_URL` on Vercel; redeploy. Pro plan for 60s proxy `maxDuration`. Check Railway logs for Groq errors. |
+| CORS blocked on `*.railway.app` | Use Vercel proxy (same-origin `/api/*`), not direct Railway URL in the browser. Redeploy frontend after env fix. |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
 | Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |

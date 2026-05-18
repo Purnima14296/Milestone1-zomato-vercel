@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import os
 
-# Production + preview Vercel URLs (e.g. https://my-app.vercel.app).
-VERCEL_ORIGIN_REGEX = r"https://([a-z0-9-]+\.)*vercel\.app"
+# Production + preview Vercel URLs (incl. *-projects.vercel.app preview hosts).
+VERCEL_ORIGIN_REGEX = r"https://[\w.-]+\.vercel\.app"
 
 
 def is_railway() -> bool:

@@ -24,8 +24,7 @@ export function isDeployedFrontend(): boolean {
 /**
  * Base URL for fetch().
  * - Local dev: direct to uvicorn (default http://127.0.0.1:8000).
- * - Vercel production (browser): direct to Railway (avoids proxy 502 on slow recommendations).
- * - Vercel production (SSR): same-origin `/api/*` → app/api/[...path] route proxy.
+ * - Vercel production: same-origin `/api/*` → `app/api/[...path]` proxies to Railway (no CORS).
  */
 export function getApiBaseUrl(): string {
   const configured = configuredApiUrl();
@@ -33,9 +32,6 @@ export function getApiBaseUrl(): string {
     return configured || "http://127.0.0.1:8000";
   }
   if (configured) {
-    if (typeof window !== "undefined") {
-      return configured;
-    }
     return "";
   }
   return "";

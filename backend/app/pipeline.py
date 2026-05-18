@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,8 +13,7 @@ from zomato_rec.phase2.models import BudgetRange, UserPreferences
 from zomato_rec.phase3.retrieve import load_processed_dataset, run_phase3
 from zomato_rec.phase4.recommend import run_phase4
 
-from backend.app.env import is_railway
-from backend.app.paths import repo_root
+from backend.app.dataset import resolve_dataset_path
 from backend.app.schemas import (
     PreferencesIn,
     RecommendationMetadata,
@@ -37,18 +35,9 @@ def _to_user_preferences(p: PreferencesIn) -> UserPreferences:
     )
 
 
-_RAILWAY_VOLUME_DEFAULT = Path("/data/restaurants.parquet")
-
-
 def default_dataset_path() -> Path:
-    """Resolved Parquet path; override with env `ZOMATO_PROCESSED_DATASET` (e.g. Railway volume / CI)."""
-    override = os.environ.get("ZOMATO_PROCESSED_DATASET", "").strip()
-    if override:
-        return Path(override)
-    if is_railway() and _RAILWAY_VOLUME_DEFAULT.is_file():
-        return _RAILWAY_VOLUME_DEFAULT
-    root = repo_root()
-    return root / "data" / "processed" / "restaurants.parquet"
+    """Resolved Parquet path; see `backend.app.dataset.resolve_dataset_path`."""
+    return resolve_dataset_path()
 
 
 def list_dataset_cities(*, limit: int = 500) -> list[str]:

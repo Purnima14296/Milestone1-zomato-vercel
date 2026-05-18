@@ -150,17 +150,17 @@ A **dedicated web client** that talks only to Phase 7 over HTTPS (or local dev p
 
 ---
 
-### Phase 9 — Production deployment (Railway + Vercel)
+### Phase 9 — Deployment: Railway (API) + Vercel (UI)
 
-Ships the **Phase 7–8 web stack** to managed hosts: FastAPI on **Railway**, Next.js on **Vercel**.
+Ships the **production stack** as two managed services: FastAPI on Railway and Next.js on Vercel.
 
-- **Backend (Railway)**: Service at repo root; `railway.toml` + `scripts/railway_build.sh`; start `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`.
-- **Frontend (Vercel)**: Project root `frontend/`; `NEXT_PUBLIC_API_URL` points at the Railway API URL (HTTPS).
-- **Secrets (Railway only)**: `GROQ_API_KEY`, `GROQ_MODEL`, `API_CORS_ORIGINS` (include the Vercel production origin), optional `ZOMATO_PROCESSED_DATASET`.
-- **Dataset**: `data/` is gitignored — run Phase 1 on a **Railway volume**, bake Parquet in the build step, or host the file and set `ZOMATO_PROCESSED_DATASET`.
-- **CORS**: list the exact Vercel URL and/or use `API_CORS_ALLOW_VERCEL_REGEX=1` (default on Railway).
+- **Backend**: `backend/` + `railway.toml` / `Procfile` — `uvicorn` on `0.0.0.0` with Railway’s `PORT`; health check `GET /api/health`.
+- **Frontend**: `frontend/` — Vercel project with **Root Directory** = `frontend`; `NEXT_PUBLIC_API_URL` points at the Railway public URL.
+- **Secrets** (Railway variables, not in git): `GROQ_API_KEY`, optional `GROQ_MODEL`, `API_CORS_ORIGINS` (include the Vercel origin), optional `ZOMATO_PROCESSED_DATASET`.
+- **Dataset**: `data/` is gitignored — run Phase 1 in a Railway build step, attach a **volume** at `/data`, or set `ZOMATO_PROCESSED_DATASET` to a mounted Parquet path.
+- **CORS**: browser calls cross-origin from Vercel → Railway; `API_CORS_ORIGINS` must list `https://<your-app>.vercel.app` (and disable localhost regex in production if desired).
 
-**Deliverable**: public HTTPS URLs for API + UI; full checklist in repo-root **`DEPLOYMENT.md`**.
+**Deliverable**: public Vercel URL for the UI and public Railway URL for the API; full guide in repo-root **`DEPLOYMENT.md`**.
 
 ---
 
@@ -181,7 +181,7 @@ Browser (Phase 8)  --HTTPS-->  Backend API (Phase 7)  -->  Phases 2 → 3 → 4 
 ### Production path (Phase 9)
 
 ```text
-Browser  --HTTPS-->  Vercel (Phase 8)  --HTTPS-->  Railway (Phase 7)  -->  Phases 2 → 3 → 4  -->  JSON
+Browser  --HTTPS-->  Vercel (Phase 8)  --HTTPS-->  Railway API (Phase 7)  -->  Phases 2 → 3 → 4
                                                           |
                                                           +--> Phase 1 dataset (read)  +  Groq (server-side)
 ```

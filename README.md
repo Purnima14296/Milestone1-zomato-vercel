@@ -46,6 +46,10 @@ python -m zomato_rec.phase1.ingest
 
 Collect validated user preferences and save them to `storage/preferences.json`:
 
+#### Web UI (Phase 8)
+
+Use the Next.js app (see [Phase 7–8](#phase-78-api--nextjs-web-ui) below) or the CLI.
+
 #### CLI
 
 ```bash
@@ -106,7 +110,7 @@ See `backend/README.md` and `frontend/README.md` for details.
 
 ### Production deployment (Railway + Vercel)
 
-- **Backend (FastAPI)** → [Railway](https://railway.com)
+- **Backend (FastAPI)** → [Railway](https://railway.app)
 - **Frontend (Next.js)** → [Vercel](https://vercel.com)
 
-Step-by-step checklist: **`DEPLOYMENT.md`**.
+Step-by-step instructions: **[DEPLOYMENT.md](DEPLOYMENT.md)**.

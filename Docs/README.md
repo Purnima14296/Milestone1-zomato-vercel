@@ -101,12 +101,7 @@ App: http://localhost:3000 — set `NEXT_PUBLIC_API_URL` in `frontend/.env.local
 
 Implementation READMEs: `backend/README.md`, `frontend/README.md`.
 
-## 🌐 Production deployment (Phase 9)
-
-- **Backend** → Railway (FastAPI)
-- **Frontend** → Vercel (Next.js)
-
-Full checklist: **`../DEPLOYMENT.md`** (`railway.toml` at repo root).
+**Production**: see repo-root **[DEPLOYMENT.md](../DEPLOYMENT.md)** (Railway backend + Vercel frontend).
 
 ## 📝 File Alignment
 

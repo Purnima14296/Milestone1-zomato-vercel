@@ -10,10 +10,10 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.app.env import apply_production_defaults, is_railway, public_service_url
+from backend.app.dataset import ensure_dataset, resolve_dataset_path
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -21,16 +21,16 @@ from backend.app.pipeline import (
     restaurants_browse,
     run_recommendations,
 )
+from backend.app.railway_env import cors_disable_localhost_regex, is_railway
 from backend.app.schemas import RecommendationRequest
 from zomato_rec.config import Settings
+from zomato_rec.logging_config import configure_logging
 
-logger = logging.getLogger("zomato_rec.api")
+logger = logging.getLogger(__name__)
 
-_env_path = repo_root() / ".env"
-if _env_path.is_file():
-    load_dotenv(_env_path)
-
-apply_production_defaults()
+_env_file = repo_root() / ".env"
+if _env_file.is_file():
+    load_dotenv(_env_file)
 
 
 def _package_version() -> str:
@@ -51,21 +51,11 @@ def _cors_origins() -> list[str]:
     return [o.strip() for o in raw.split(",") if o.strip()]
 
 
-def _cors_origin_regex() -> str | None:
-    """
-    Extra allowed origins beyond API_CORS_ORIGINS:
-    - localhost (dev) unless disabled
-    - *.vercel.app in production (Railway + preview deploys) unless disabled
-    """
-    patterns: list[str] = []
-    if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() not in {"1", "true", "yes"}:
-        patterns.append(r"https?://(localhost|127\.0\.0\.1)(:\d+)?")
-    allow_vercel = os.getenv("API_CORS_ALLOW_VERCEL_REGEX", "1" if is_railway() else "0").strip()
-    if allow_vercel not in {"0", "false", "no"}:
-        patterns.append(r"https://[\w.-]+\.vercel\.app")
-    if not patterns:
+def _cors_localhost_regex() -> str | None:
+    """Match any http(s) dev origin on localhost / 127.0.0.1 with any port (e.g. Next on :3001)."""
+    if cors_disable_localhost_regex():
         return None
-    return "|".join(f"({p})" for p in patterns)
+    return r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 
 class _SlidingWindowLimiter:
@@ -110,19 +100,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
-    from zomato_rec.logging_config import configure_logging
-
-    configure_logging(Settings().log_level)
-    ds = default_dataset_path()
-    if ds.is_file():
-        logger.info("Dataset ready: %s", ds)
-    else:
+    settings = Settings()
+    configure_logging(settings.log_level)
+    ds = ensure_dataset(settings=settings)
+    if not ds.is_file():
         logger.warning(
-            "Processed dataset missing at %s — /api/recommendations will return 503 until ingest completes",
+            "Processed dataset not found at %s — recommendations will return 503 until "
+            "ZOMATO_PROCESSED_DATASET is set, a Railway volume is mounted at /data, or "
+            "ZOMATO_AUTO_INGEST_IF_MISSING=1 is enabled.",
             ds,
         )
-    if is_railway():
-        logger.info("Running on Railway; service URL=%s", public_service_url() or "(pending)")
     yield
 
 
@@ -138,7 +125,7 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
-    allow_origin_regex=_cors_origin_regex(),
+    allow_origin_regex=_cors_localhost_regex(),
     # No cookies / auth on this API yet; false avoids extra CORS friction in browsers.
     allow_credentials=False,
     allow_methods=["*"],
@@ -147,34 +134,25 @@ app.add_middleware(
 
 
 @app.get("/")
-def root() -> dict:
-    return {
-        "service": "zomato-recommendation-api",
-        "health": "/api/health",
-        "docs": "/docs",
-    }
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/api/health")
 
 
 @app.get("/api/health")
 def health() -> dict:
     settings = Settings()
-    ds = default_dataset_path()
+    ds = resolve_dataset_path()
     cors_origins = _cors_origins()
-    payload = {
+    return {
         "status": "ok",
         "dataset_path": str(ds),
         "dataset_ok": ds.is_file(),
         "groq_configured": bool(settings.groq_api_key),
         "groq_model": settings.groq_model,
         "railway": is_railway(),
-        "cors_origins_count": len(cors_origins),
+        "cors_origins_configured": len(cors_origins) > 0,
+        "cors_localhost_regex_enabled": _cors_localhost_regex() is not None,
     }
-    if is_railway():
-        payload["service_url"] = public_service_url()
-    if is_railway() and not cors_origins:
-        payload["status"] = "degraded"
-        payload["warning"] = "API_CORS_ORIGINS is empty; set your Vercel URL on Railway"
-    return payload
 
 
 @app.get("/api/metadata")

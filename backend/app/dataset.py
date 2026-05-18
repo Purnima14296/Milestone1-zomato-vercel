@@ -107,10 +107,9 @@ def _run_ingest(*, settings: object | None = None) -> Path:
         report_path=str(report_path),
     )
     logger.info("Ingest complete (%s)", path)
-    from backend.app.dataset_cache import clear_dataset_cache, warm_dataset_cache
+    from backend.app.dataset_cache import clear_dataset_cache
 
     clear_dataset_cache()
-    warm_dataset_cache()
     return path
 
 

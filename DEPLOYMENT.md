@@ -187,7 +187,8 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | Vercel **502** on `/api/recommendations` | Set `NEXT_PUBLIC_API_URL` + `API_URL` on Vercel; redeploy. Pro plan for 60s proxy `maxDuration`. Check Railway logs for Groq errors. |
 | CORS blocked on `*.railway.app` | Use Vercel proxy (same-origin `/api/*`), not direct Railway URL in the browser. Redeploy frontend after env fix. |
-| Railway/Vercel **502** on recommendations (~1s) | Often worker OOM reloading parquet. Redeploy backend (dataset cache + warmup). Use Railway plan with **≥1 GB RAM**. Check logs for `recommendations: phase3/phase4`. |
+| Railway/Vercel **502** on recommendations (~1s) | Often worker OOM reloading parquet. Redeploy backend (slim dataset cache, lazy load). Use Railway plan with **≥1 GB RAM**. Check logs for `recommendations: phase3/phase4`. |
+| Railway **restart loop** at `Loading dataset cache` | Fixed: no synchronous cache warm at startup. `/api/health` starts first; cache loads on first recommendation. |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
 | Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |

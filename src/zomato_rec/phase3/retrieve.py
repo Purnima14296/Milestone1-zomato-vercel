@@ -20,12 +20,22 @@ def _norm_key(s: str) -> str:
     return _WS_RE.sub(" ", s).strip()
 
 
-def load_processed_dataset(path: str) -> pd.DataFrame:
+# Columns required for Phase 3/7 API paths (omit `raw` to save RAM on small hosts).
+API_DATASET_COLUMNS = ("restaurant_name", "city", "cuisines", "cost_estimate", "rating")
+
+
+def load_processed_dataset(path: str, *, columns: list[str] | None = None) -> pd.DataFrame:
     lower = path.lower()
     if lower.endswith(".parquet"):
-        df = pd.read_parquet(path)
+        try:
+            df = pd.read_parquet(path, columns=columns)
+        except Exception:
+            if columns:
+                df = pd.read_parquet(path)
+            else:
+                raise
     elif lower.endswith(".csv"):
-        df = pd.read_csv(path)
+        df = pd.read_csv(path, usecols=columns) if columns else pd.read_csv(path)
     else:
         raise ValueError(f"Unsupported dataset format: {path}")
 

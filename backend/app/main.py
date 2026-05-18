@@ -21,7 +21,7 @@ from backend.app.dataset import (
     prepare_dataset_at_startup,
     resolve_dataset_path,
 )
-from backend.app.dataset_cache import warm_dataset_cache
+from backend.app.dataset_cache import warm_dataset_cache_async
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -114,8 +114,14 @@ async def _lifespan(_app: FastAPI):
     settings = Settings()
     configure_logging(settings.log_level)
     prepare_dataset_at_startup(settings=settings)
-    if resolve_dataset_path().is_file():
-        warm_dataset_cache()
+    ds_path = resolve_dataset_path()
+    if ds_path.is_file():
+        logger.info(
+            "Dataset on disk at %s (cache loads lazily on first recommendation; no startup preload on Railway)",
+            ds_path,
+        )
+        if not is_railway():
+            warm_dataset_cache_async()
     if is_railway():
         port = os.getenv("PORT", "(unset)")
         logger.info(

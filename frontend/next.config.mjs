@@ -1,23 +1,23 @@
 /** @type {import('next').NextConfig} */
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "") || "";
+/**
+ * Railway API base (no trailing slash).
+ * - NEXT_PUBLIC_API_URL: used by client + build
+ * - API_URL: server-only fallback for /api/* route proxy
+ */
+const apiUrl =
+  process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "") ||
+  process.env.API_URL?.trim().replace(/\/$/, "") ||
+  "";
 
 const nextConfig = {
   reactStrictMode: true,
-  async rewrites() {
-    if (!apiUrl) return [];
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiUrl}/api/:path*`,
-      },
-    ];
-  },
+  // /api/* is proxied via src/app/api/[...path]/route.ts (not rewrites) for clearer 502 errors and maxDuration.
 };
 
 if (process.env.VERCEL === "1" && !apiUrl) {
   console.warn(
-    "\n[Vercel] NEXT_PUBLIC_API_URL is not set. Add it under Project → Settings → Environment Variables, then redeploy.\n",
+    "\n[Vercel] Set NEXT_PUBLIC_API_URL and API_URL to your Railway URL (e.g. https://web-production-843fc7.up.railway.app), then redeploy.\n",
   );
 }
 

@@ -130,11 +130,13 @@ Or use repo-root `vercel.json` (builds `frontend/` automatically).
 
 | Key | Environments | Value |
 |-----|----------------|-------|
-| `NEXT_PUBLIC_API_URL` | Production, Preview | `https://<your-railway-service>.up.railway.app` |
+| `NEXT_PUBLIC_API_URL` | Production, Preview | `https://<your-railway-service>.up.railway.app` (no trailing slash) |
+| `API_URL` | Production, Preview | Same as `NEXT_PUBLIC_API_URL` (server proxy fallback) |
 
 - No trailing slash.
 - **Redeploy after changing** — baked in at build time.
-- Vercel **rewrites** `/api/*` → Railway (avoids most browser CORS issues).
+- Vercel **route proxy** `frontend/src/app/api/[...path]/route.ts` forwards `/api/*` → Railway (`maxDuration` 60s).
+- Browser calls Railway **directly** when `NEXT_PUBLIC_API_URL` is set (avoids proxy 502 on slow Groq).
 
 ### 2.3 Verify UI
 
@@ -183,6 +185,7 @@ npm run dev
 | `503` / no dataset | Volume + ingest, or `ZOMATO_AUTO_INGEST_IF_MISSING=1` |
 | CORS error | Set `API_CORS_ORIGINS` or keep `API_CORS_ALLOW_VERCEL=1` on Railway |
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
+| Vercel **502** on `/api/recommendations` | Set `NEXT_PUBLIC_API_URL` + `API_URL` to Railway URL; redeploy. Browser calls Railway directly; long POSTs need Pro for 60s proxy or use direct mode (default in browser). |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
 | Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |
@@ -211,6 +214,8 @@ npm run dev
 | `backend/app/dataset.py` | Dataset path + optional ingest |
 | `backend/app/main.py` | FastAPI app |
 | `scripts/railway_build.sh` | Optional build-time install + Phase 1 ingest |
-| `frontend/next.config.mjs` | Proxy `/api/*` → Railway |
+| `frontend/src/app/api/[...path]/route.ts` | Server proxy `/api/*` → Railway |
+| `frontend/vercel.json` | `maxDuration: 60` for API proxy |
+| `frontend/next.config.mjs` | Next.js config (API URL warnings at build) |
 | `frontend/vercel.json` | Vercel build |
 | `frontend/.env.production.example` | Vercel env template |

@@ -75,6 +75,17 @@ def _set_ingest_state(state: IngestState, *, error: str | None = None) -> None:
         _ingest_error = error
 
 
+def _try_start_ingest() -> bool:
+    """Mark ingest as running if not already. Returns False if already running."""
+    global _ingest_state, _ingest_error
+    with _ingest_lock:
+        if _ingest_state == "running":
+            return False
+        _ingest_state = "running"
+        _ingest_error = None
+        return True
+
+
 def _run_ingest(*, settings: object | None = None) -> Path:
     """Blocking ingest (Phase 1). Used from background thread or sync callers."""
     from zomato_rec.config import Settings
@@ -135,11 +146,8 @@ def start_background_ingest(*, settings: object | None = None) -> bool:
     if not auto_ingest_if_missing():
         return False
 
-    with _ingest_lock:
-        if _ingest_state == "running":
-            return False
-        _ingest_state = "running"
-        _ingest_error = None
+    if not _try_start_ingest():
+        return False
 
     def worker() -> None:
         try:

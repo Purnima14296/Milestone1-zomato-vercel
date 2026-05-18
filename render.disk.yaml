@@ -1,0 +1,38 @@
+# Render Blueprint — Option B: persistent disk (production).
+# After first deploy, open Render Shell once:
+#   python -m zomato_rec.phase1.ingest --out /var/data/restaurants.parquet
+services:
+  - type: web
+    name: zomato-api
+    runtime: python
+    plan: starter
+    region: oregon
+    branch: master
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: zomato-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ZOMATO_PROCESSED_DATASET
+        value: /var/data/restaurants.parquet
+      - key: RENDER_SKIP_DATASET_INGEST
+        value: "1"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: HF_DATASET_ID
+        value: ManikaSaini/zomato-restaurant-recommendation
+      - key: HF_DATASET_SPLIT
+        value: train
+      - key: API_CORS_DISABLE_LOCALHOST_REGEX
+        value: "1"
+      - key: API_CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO

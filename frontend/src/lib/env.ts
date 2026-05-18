@@ -1,5 +1,5 @@
 /**
- * Public API base URL (Railway in production, local uvicorn in dev).
+ * Public API base URL (Render in production, local uvicorn in dev).
  * Set `NEXT_PUBLIC_API_URL` in Vercel → Environment Variables — see DEPLOYMENT.md.
  */
 export function getApiBaseUrl(): string {
@@ -15,4 +15,16 @@ export function isApiConfigured(): boolean {
 
 export function isVercel(): boolean {
   return process.env.VERCEL === "1";
+}
+
+export function isProductionBuild(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
+/** Shown when `NEXT_PUBLIC_API_URL` is missing on Vercel/production builds. */
+export function apiConfigurationHint(): string {
+  if (isVercel()) {
+    return "In Vercel → Project → Settings → Environment Variables, set NEXT_PUBLIC_API_URL to your Render API URL (no trailing slash), then redeploy.";
+  }
+  return "Set NEXT_PUBLIC_API_URL in frontend/.env.local (local) or Vercel environment variables (production). See DEPLOYMENT.md.";
 }

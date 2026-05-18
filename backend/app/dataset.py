@@ -4,13 +4,13 @@ import logging
 import os
 from pathlib import Path
 
+from backend.app.env import auto_ingest_if_missing, is_render
 from backend.app.paths import repo_root
-from backend.app.railway_env import auto_ingest_if_missing, is_railway
 
 logger = logging.getLogger(__name__)
 
-RAILWAY_VOLUME_DATASET = Path("/data/processed/restaurants.parquet")
-LOCAL_DEFAULT_DATASET = repo_root() / "data" / "processed" / "restaurants.parquet"
+RENDER_DISK_DATASET = Path("/var/data/restaurants.parquet")
+BUILD_DEFAULT_DATASET = repo_root() / "data" / "processed" / "restaurants.parquet"
 
 
 def resolve_dataset_path() -> Path:
@@ -18,25 +18,27 @@ def resolve_dataset_path() -> Path:
     Resolved Parquet path for the API.
 
     Priority:
-    1. `ZOMATO_PROCESSED_DATASET` env (Railway volume, custom mount)
-    2. `/data/processed/restaurants.parquet` on Railway if the file exists
+    1. `ZOMATO_PROCESSED_DATASET` env (Render disk, custom mount)
+    2. `/var/data/restaurants.parquet` on Render if the file exists
     3. `data/processed/restaurants.parquet` under repo root if it exists
-    4. Railway volume path when on Railway, else repo-local default (for clear errors)
+    4. `data/processed/restaurants.parquet` (Option A build output on Render)
     """
     override = os.environ.get("ZOMATO_PROCESSED_DATASET", "").strip()
     if override:
         return Path(override)
 
     candidates: list[Path] = []
-    if is_railway():
-        candidates.append(RAILWAY_VOLUME_DATASET)
-    candidates.append(LOCAL_DEFAULT_DATASET)
+    if is_render():
+        candidates.extend([RENDER_DISK_DATASET, BUILD_DEFAULT_DATASET])
+    else:
+        candidates.append(BUILD_DEFAULT_DATASET)
 
     for path in candidates:
         if path.is_file():
             return path
 
-    return candidates[0] if is_railway() else LOCAL_DEFAULT_DATASET
+    # Default path for logs/errors (Option A build output; Option B sets ZOMATO_PROCESSED_DATASET).
+    return BUILD_DEFAULT_DATASET
 
 
 def ensure_dataset(*, settings: object | None = None) -> Path:

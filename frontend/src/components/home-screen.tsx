@@ -7,7 +7,9 @@ import { FoodHero } from "@/components/food-hero";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemedSelect } from "@/components/themed-select";
+import { ApiConfigBanner } from "@/components/api-config-banner";
 import { getHealth, getLocations, postRecommendations } from "@/lib/api";
+import { isApiConfigured } from "@/lib/env";
 import type { RecommendationResponse } from "@/lib/types";
 
 const QUICK_CUISINES = ["North Indian", "South Indian", "Korean", "Thai"] as const;
@@ -45,9 +47,12 @@ export function HomeScreen() {
   const [cuisineDraft, setCuisineDraft] = useState("");
   const [extra, setExtra] = useState("");
 
+  const apiConfigured = isApiConfigured();
+
   const health = useQuery({
     queryKey: ["health"],
     queryFn: getHealth,
+    enabled: apiConfigured,
     retry: 1,
     refetchOnWindowFocus: false,
   });
@@ -55,12 +60,13 @@ export function HomeScreen() {
   const locationsQuery = useQuery({
     queryKey: ["locations"],
     queryFn: getLocations,
+    enabled: apiConfigured,
     retry: 1,
     staleTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  const apiStatus = health.isLoading ? "loading" : health.isError ? "error" : "ok";
+  const apiStatus = !apiConfigured ? "error" : health.isLoading ? "loading" : health.isError ? "error" : "ok";
 
   const mutation = useMutation({
     mutationFn: postRecommendations,
@@ -294,10 +300,13 @@ export function HomeScreen() {
               />
             </div>
 
-            {health.isError && (
+            {!apiConfigured && <ApiConfigBanner />}
+
+            {apiConfigured && health.isError && (
               <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
-                Can&apos;t reach the API. Start the backend:{" "}
-                <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">python -m uvicorn backend.app.main:app --reload --port 8000</code>
+                {health.error instanceof Error
+                  ? health.error.message
+                  : "Can't reach the API. Check that Render is running and CORS allows this site."}
               </p>
             )}
 
@@ -309,7 +318,7 @@ export function HomeScreen() {
 
             <button
               type="submit"
-              disabled={!canSubmit || mutation.isPending}
+              disabled={!apiConfigured || !canSubmit || mutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-zomato-red py-4 text-base font-semibold text-white shadow-lg transition hover:bg-zomato-red-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Sparkles className="h-5 w-5" strokeWidth={2} aria-hidden />

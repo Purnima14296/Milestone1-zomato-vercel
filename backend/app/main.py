@@ -21,7 +21,7 @@ from backend.app.pipeline import (
     restaurants_browse,
     run_recommendations,
 )
-from backend.app.railway_env import cors_disable_localhost_regex, is_railway
+from backend.app.env import apply_render_defaults, is_render, render_service_url
 from backend.app.schemas import RecommendationRequest
 from zomato_rec.config import Settings
 from zomato_rec.logging_config import configure_logging
@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 _env_file = repo_root() / ".env"
 if _env_file.is_file():
     load_dotenv(_env_file)
+
+apply_render_defaults()
 
 
 def _package_version() -> str:
@@ -53,7 +55,7 @@ def _cors_origins() -> list[str]:
 
 def _cors_localhost_regex() -> str | None:
     """Match any http(s) dev origin on localhost / 127.0.0.1 with any port (e.g. Next on :3001)."""
-    if cors_disable_localhost_regex():
+    if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() in {"1", "true", "yes"}:
         return None
     return r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
@@ -106,10 +108,12 @@ async def _lifespan(_app: FastAPI):
     if not ds.is_file():
         logger.warning(
             "Processed dataset not found at %s — recommendations will return 503 until "
-            "ZOMATO_PROCESSED_DATASET is set, a Railway volume is mounted at /data, or "
+            "ZOMATO_PROCESSED_DATASET is set, Render disk has Parquet at /var/data, or "
             "ZOMATO_AUTO_INGEST_IF_MISSING=1 is enabled.",
             ds,
         )
+    if is_render():
+        logger.info("Running on Render; service URL=%s", render_service_url() or "(pending)")
     yield
 
 
@@ -138,19 +142,32 @@ def root() -> RedirectResponse:
     return RedirectResponse(url="/api/health")
 
 
+def _health_status(*, dataset_ok: bool, groq_configured: bool) -> str:
+    if dataset_ok and groq_configured:
+        return "ok"
+    return "degraded"
+
+
 @app.get("/api/health")
 def health() -> dict:
     settings = Settings()
     ds = resolve_dataset_path()
     cors_origins = _cors_origins()
+    dataset_ok = ds.is_file()
+    groq_configured = bool(settings.groq_api_key)
+    cors_has_production_origin = any(
+        o.startswith("https://") and "localhost" not in o and "127.0.0.1" not in o for o in cors_origins
+    )
     return {
-        "status": "ok",
+        "status": _health_status(dataset_ok=dataset_ok, groq_configured=groq_configured),
         "dataset_path": str(ds),
-        "dataset_ok": ds.is_file(),
-        "groq_configured": bool(settings.groq_api_key),
+        "dataset_ok": dataset_ok,
+        "groq_configured": groq_configured,
         "groq_model": settings.groq_model,
-        "railway": is_railway(),
-        "cors_origins_configured": len(cors_origins) > 0,
+        "render": is_render(),
+        "render_url": render_service_url(),
+        "cors_origins": cors_origins if is_render() else None,
+        "cors_production_origin_configured": cors_has_production_origin if is_render() else None,
         "cors_localhost_regex_enabled": _cors_localhost_regex() is not None,
     }
 

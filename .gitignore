@@ -7,7 +7,7 @@ __pycache__/
 .venv/
 venv/
 
-# Streamlit (removed — use Railway + Vercel)
+# Streamlit (removed — use Render + Vercel)
 .streamlit/
 
 # Env / secrets

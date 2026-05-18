@@ -1,0 +1,31 @@
+# Render Blueprint — Option A: ingest dataset during build (demo / first deploy).
+# Option B (persistent disk): use render.disk.yaml or see DEPLOYMENT.md §1.3.
+services:
+  - type: web
+    name: zomato-api
+    runtime: python
+    plan: free
+    region: oregon
+    branch: master
+    buildCommand: bash scripts/render_build.sh
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: HF_DATASET_ID
+        value: ManikaSaini/zomato-restaurant-recommendation
+      - key: HF_DATASET_SPLIT
+        value: train
+      - key: ZOMATO_PROCESSED_DATASET
+        value: data/processed/restaurants.parquet
+      - key: API_CORS_DISABLE_LOCALHOST_REGEX
+        value: "1"
+      - key: API_CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO

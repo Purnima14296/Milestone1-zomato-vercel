@@ -1,4 +1,9 @@
-import { apiConfigurationHint, getApiBaseUrl, isVercel } from "@/lib/env";
+import {
+  apiConfigurationHint,
+  getApiBaseUrl,
+  isApiConfigured,
+  isDeployedFrontend,
+} from "@/lib/env";
 import type { LocationsResponse, RecommendationRequest, RecommendationResponse } from "@/lib/types";
 
 export class ApiConfigurationError extends Error {
@@ -9,9 +14,10 @@ export class ApiConfigurationError extends Error {
 }
 
 function requireApiBase(): string {
-  const base = getApiBaseUrl();
-  if (!base) throw new ApiConfigurationError();
-  return base;
+  if (!isApiConfigured()) {
+    throw new ApiConfigurationError();
+  }
+  return getApiBaseUrl();
 }
 
 async function parseError(res: Response): Promise<string> {
@@ -39,9 +45,10 @@ function wrapFetchError(err: unknown): Error {
   if (err instanceof TypeError) {
     const msg = String(err.message).toLowerCase();
     if (msg.includes("fetch") || msg.includes("network") || msg.includes("failed")) {
-      if (isVercel()) {
+      if (isDeployedFrontend()) {
         return new Error(
-          "Cannot reach the API. Confirm NEXT_PUBLIC_API_URL points to your Render service and API_CORS_ORIGINS on Render includes this Vercel URL.",
+          "Cannot reach the API. Set NEXT_PUBLIC_API_URL in Vercel to your Render URL and redeploy. " +
+            "If already set, check Render is running and /api/health works.",
         );
       }
       return new Error(
@@ -54,8 +61,9 @@ function wrapFetchError(err: unknown): Error {
 
 async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const base = requireApiBase();
+  const url = base ? `${base}${path}` : path;
   try {
-    return await fetch(`${base}${path}`, init);
+    return await fetch(url, init);
   } catch (e) {
     throw wrapFetchError(e);
   }

@@ -21,7 +21,13 @@ from backend.app.pipeline import (
     restaurants_browse,
     run_recommendations,
 )
-from backend.app.env import apply_render_defaults, is_render, render_service_url
+from backend.app.env import (
+    apply_render_defaults,
+    cors_has_production_access,
+    cors_origin_regex,
+    is_render,
+    render_service_url,
+)
 from backend.app.schemas import RecommendationRequest
 from zomato_rec.config import Settings
 from zomato_rec.logging_config import configure_logging
@@ -51,13 +57,6 @@ def _cors_origins() -> list[str]:
         "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001",
     )
     return [o.strip() for o in raw.split(",") if o.strip()]
-
-
-def _cors_localhost_regex() -> str | None:
-    """Match any http(s) dev origin on localhost / 127.0.0.1 with any port (e.g. Next on :3001)."""
-    if os.getenv("API_CORS_DISABLE_LOCALHOST_REGEX", "").strip() in {"1", "true", "yes"}:
-        return None
-    return r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
 
 
 class _SlidingWindowLimiter:
@@ -129,7 +128,7 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins(),
-    allow_origin_regex=_cors_localhost_regex(),
+    allow_origin_regex=cors_origin_regex(),
     # No cookies / auth on this API yet; false avoids extra CORS friction in browsers.
     allow_credentials=False,
     allow_methods=["*"],
@@ -155,9 +154,7 @@ def health() -> dict:
     cors_origins = _cors_origins()
     dataset_ok = ds.is_file()
     groq_configured = bool(settings.groq_api_key)
-    cors_has_production_origin = any(
-        o.startswith("https://") and "localhost" not in o and "127.0.0.1" not in o for o in cors_origins
-    )
+    origin_regex = cors_origin_regex()
     return {
         "status": _health_status(dataset_ok=dataset_ok, groq_configured=groq_configured),
         "dataset_path": str(ds),
@@ -167,8 +164,8 @@ def health() -> dict:
         "render": is_render(),
         "render_url": render_service_url(),
         "cors_origins": cors_origins if is_render() else None,
-        "cors_production_origin_configured": cors_has_production_origin if is_render() else None,
-        "cors_localhost_regex_enabled": _cors_localhost_regex() is not None,
+        "cors_production_origin_configured": cors_has_production_access(cors_origins) if is_render() else None,
+        "cors_origin_regex": origin_regex if is_render() else None,
     }
 
 

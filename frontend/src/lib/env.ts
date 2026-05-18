@@ -1,30 +1,54 @@
 /**
- * Public API base URL (Render in production, local uvicorn in dev).
+ * Public API base URL (Render in production via Vercel rewrite, local uvicorn in dev).
  * Set `NEXT_PUBLIC_API_URL` in Vercel → Environment Variables — see DEPLOYMENT.md.
  */
-export function getApiBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (raw) return raw.replace(/\/$/, "");
-  if (process.env.NODE_ENV === "production") return "";
-  return "http://127.0.0.1:8000";
+
+/** Inlined at build time when set in Vercel. */
+export function configuredApiUrl(): string {
+  return process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/$/, "") ?? "";
 }
 
-export function isApiConfigured(): boolean {
-  return getApiBaseUrl().length > 0;
+export function isLocalDev(): boolean {
+  return process.env.NODE_ENV !== "production";
 }
 
-export function isVercel(): boolean {
-  return process.env.VERCEL === "1";
-}
-
-export function isProductionBuild(): boolean {
+/** True when the app runs on a deployed host (Vercel), not localhost. */
+export function isDeployedFrontend(): boolean {
+  if (typeof window !== "undefined") {
+    const h = window.location.hostname;
+    return h !== "localhost" && h !== "127.0.0.1";
+  }
   return process.env.NODE_ENV === "production";
 }
 
-/** Shown when `NEXT_PUBLIC_API_URL` is missing on Vercel/production builds. */
-export function apiConfigurationHint(): string {
-  if (isVercel()) {
-    return "In Vercel → Project → Settings → Environment Variables, set NEXT_PUBLIC_API_URL to your Render API URL (no trailing slash), then redeploy.";
+/**
+ * Base URL for fetch().
+ * - Local dev: direct to uvicorn (default http://127.0.0.1:8000).
+ * - Vercel production: empty string → same-origin `/api/*` (rewritten to Render in next.config).
+ */
+export function getApiBaseUrl(): string {
+  const configured = configuredApiUrl();
+  if (isLocalDev()) {
+    return configured || "http://127.0.0.1:8000";
   }
-  return "Set NEXT_PUBLIC_API_URL in frontend/.env.local (local) or Vercel environment variables (production). See DEPLOYMENT.md.";
+  if (configured) {
+    return "";
+  }
+  return "";
+}
+
+export function isApiConfigured(): boolean {
+  if (configuredApiUrl()) return true;
+  return isLocalDev();
+}
+
+export function isVercel(): boolean {
+  return isDeployedFrontend();
+}
+
+export function apiConfigurationHint(): string {
+  if (isDeployedFrontend()) {
+    return "In Vercel → Settings → Environment Variables, set NEXT_PUBLIC_API_URL to your Render API URL (e.g. https://your-app.onrender.com, no trailing slash), then redeploy.";
+  }
+  return "Set NEXT_PUBLIC_API_URL in frontend/.env.local for local dev. See DEPLOYMENT.md.";
 }

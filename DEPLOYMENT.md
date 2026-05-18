@@ -70,8 +70,9 @@ Set in **Environment** (never commit real values):
 |-----|----------|-----------------|
 | `GROQ_API_KEY` | Yes | Groq secret |
 | `GROQ_MODEL` | No | `llama-3.3-70b-versatile` (default in Settings) |
-| `API_CORS_ORIGINS` | Yes | `https://your-app.vercel.app` (exact origin, no trailing slash) |
-| `API_CORS_DISABLE_LOCALHOST_REGEX` | Yes (prod) | `1` (auto-set on Render if unset) |
+| `API_CORS_ORIGINS` | Recommended | `https://your-app.vercel.app` (exact origin; optional if using Vercel regex) |
+| `API_CORS_ALLOW_VERCEL` | No | `1` (default) — allows all `https://*.vercel.app` origins on Render |
+| `API_CORS_DISABLE_LOCALHOST_REGEX` | No | `1` (auto-set on Render if unset) |
 | `HF_DATASET_ID` | No | Default in config if you ingest on build |
 | `HF_DATASET_SPLIT` | No | `train` |
 | `ZOMATO_PROCESSED_DATASET` | If using disk | e.g. `/var/data/restaurants.parquet` |
@@ -145,7 +146,9 @@ Or deploy from repo root using root `vercel.json` (builds `frontend/` automatica
 |-----|----------------|-------|
 | `NEXT_PUBLIC_API_URL` | Production (and Preview if needed) | `https://<your-render-service>.onrender.com` |
 
-No trailing slash. Redeploy after changing this variable.
+No trailing slash. **Redeploy after changing** — Next.js bakes this in at build time and uses it to proxy `/api/*` to Render (avoids browser CORS issues).
+
+`API_CORS_ORIGINS` on Render is still recommended if you call Render directly; the Vercel proxy uses server-side requests.
 
 ### 2.3 Verify the UI
 

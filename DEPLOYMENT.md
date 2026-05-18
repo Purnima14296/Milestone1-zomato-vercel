@@ -199,5 +199,9 @@ Use this order on first setup:
 | `render.disk.yaml` | Blueprint Option B (persistent disk) |
 | `backend/app/env.py` | Render detection + production CORS defaults |
 | `backend/app/main.py` | FastAPI app + CORS + `/api/health` |
-| `frontend/src/lib/api.ts` | Uses `NEXT_PUBLIC_API_URL` |
-| `.env.example` | Local / documented env keys |
+| `frontend/vercel.json` | Vercel install/build for Next.js |
+| `frontend/next.config.mjs` | Fails Vercel build if `NEXT_PUBLIC_API_URL` is unset |
+| `frontend/src/lib/env.ts` | Resolves `NEXT_PUBLIC_API_URL` |
+| `frontend/src/lib/api.ts` | API client + production error messages |
+| `frontend/.env.example` | Documented env key for Vercel dashboard |
+| `.env.example` | Backend / local env keys |

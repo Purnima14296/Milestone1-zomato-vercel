@@ -7,7 +7,7 @@ import { FoodHero } from "@/components/food-hero";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ThemedSelect } from "@/components/themed-select";
-import { getHealth, getLocations, postRecommendations } from "@/lib/api";
+import { formatApiError, getApiBaseUrl, getHealth, getLocations, isApiConfigured, postRecommendations } from "@/lib/api";
 import type { RecommendationResponse } from "@/lib/types";
 
 const QUICK_CUISINES = ["North Indian", "South Indian", "Korean", "Thai"] as const;
@@ -294,16 +294,37 @@ export function HomeScreen() {
               />
             </div>
 
-            {health.isError && (
+            {!isApiConfigured() && (
               <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
-                Can&apos;t reach the API. Start the backend:{" "}
-                <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">python -m uvicorn backend.app.main:app --reload --port 8000</code>
+                <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">NEXT_PUBLIC_API_URL</code> is not set. On
+                Vercel, add it under Environment Variables (your Render API URL, no trailing slash).
+              </p>
+            )}
+
+            {health.isError && isApiConfigured() && (
+              <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="alert">
+                {process.env.NODE_ENV === "production" ? (
+                  <>
+                    Can&apos;t reach the API at{" "}
+                    <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">{getApiBaseUrl()}</code>. Confirm{" "}
+                    <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">NEXT_PUBLIC_API_URL</code> on Vercel
+                    and <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">API_CORS_ORIGINS</code> on Render
+                    (must include this site&apos;s origin).
+                  </>
+                ) : (
+                  <>
+                    Can&apos;t reach the API. Start the backend:{" "}
+                    <code className="rounded bg-zomato-dark px-1.5 py-0.5 text-xs">
+                      python -m uvicorn backend.app.main:app --reload --port 8000
+                    </code>
+                  </>
+                )}
               </p>
             )}
 
             {mutation.isError && (
               <p className="rounded-lg border border-zomato-red/40 bg-zomato-red/10 px-4 py-3 text-sm text-red-200" role="alert">
-                {mutation.error instanceof Error ? mutation.error.message : "Something went wrong."}
+                {formatApiError(mutation.error)}
               </p>
             )}
 

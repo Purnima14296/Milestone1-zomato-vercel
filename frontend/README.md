@@ -1,6 +1,6 @@
 # Phase 8 — Next.js frontend
 
-## Setup
+## Local setup
 
 ```bash
 cd frontend
@@ -23,4 +23,29 @@ No Groq or other secrets belong in this app — only the public API base URL.
 
 ## Production (Vercel)
 
-See **`../DEPLOYMENT.md`**. Set root directory to `frontend/` and `NEXT_PUBLIC_API_URL` to your Render API URL.
+Full checklist: **`../DEPLOYMENT.md`** §2.
+
+| Vercel setting | Value |
+|----------------|--------|
+| **Root directory** | `frontend` |
+| **Framework** | Next.js |
+| **Build command** | `npm run build` (default; also in `vercel.json`) |
+
+### Environment variables
+
+| Key | Environments | Value |
+|-----|----------------|--------|
+| `NEXT_PUBLIC_API_URL` | Production, Preview | `https://<your-render-service>.onrender.com` (no trailing slash) |
+
+Copy from `.env.example` or `.env.local.example`. The build **fails on Vercel** if `NEXT_PUBLIC_API_URL` is missing.
+
+After deploy, set Render `API_CORS_ORIGINS` to your Vercel URL (e.g. `https://your-app.vercel.app`) and redeploy Render.
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `vercel.json` | Install/build commands for Vercel |
+| `next.config.mjs` | Validates `NEXT_PUBLIC_API_URL` on Vercel builds |
+| `src/lib/env.ts` | Resolves API base URL |
+| `src/lib/api.ts` | Fetch helpers + CORS-friendly errors |

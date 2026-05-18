@@ -9,8 +9,8 @@ if ! command -v "$PY" >/dev/null 2>&1; then
 fi
 
 if ! "$PY" -m pip --version >/dev/null 2>&1; then
-  echo "==> Bootstrapping pip via ensurepip"
-  "$PY" -m ensurepip --upgrade
+  echo "ERROR: pip is not available. Use the repo Dockerfile on Railway (python:3.12-slim)." >&2
+  exit 1
 fi
 
 echo "==> Installing package and dependencies"

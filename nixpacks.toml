@@ -1,11 +1,13 @@
-# Nixpacks (Railway) — always use `python -m pip` (pip may not be on PATH).
+# Nixpacks fallback — use Railway Dockerfile builder when possible (see railway.toml).
+# Python provider includes pip; never use ensurepip on Nix.
+
+providers = ["python"]
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.12"
 
 [phases.install]
 cmds = [
-  "python3 -m ensurepip --upgrade",
-  "python3 -m pip install --upgrade pip setuptools wheel",
-  "python3 -m pip install \".[api]\"",
+  "python -m pip install --upgrade pip setuptools wheel",
+  "python -m pip install \".[api]\"",
 ]

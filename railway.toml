@@ -1,9 +1,9 @@
 [build]
-builder = "nixpacks"
-# Install via nixpacks.toml [phases.install] (includes pip). Do not set buildCommand here.
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+startCommand = "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

@@ -35,13 +35,16 @@ Railway (uvicorn → FastAPI)
 1. [Railway](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
 2. Select **Milestone1-zomato-vercel**.
 3. **Root directory:** repository root (not `frontend/`).
-4. Railway reads `railway.toml`, `nixpacks.toml`, and `requirements.txt`.
+4. Railway reads `railway.toml` and **`Dockerfile`** (recommended — `python:3.12-slim` includes pip).
 
 | Setting | Value |
 |---------|--------|
-| **Build** | Nixpacks `python3 -m pip install ".[api]"` (see `nixpacks.toml`; never call bare `pip` on Railway) |
+| **Builder** | `DOCKERFILE` (see `railway.toml`) |
+| **Build** | `docker build` using root `Dockerfile` — `python -m pip install ".[api]"` |
 | **Start** | `python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT` |
 | **Health check** | `/api/health` |
+
+Fallback: Nixpacks (`nixpacks.toml` with `providers = ["python"]`) — do **not** use `ensurepip` on Railway/Nix.
 
 ### 1.2 Environment variables (Railway)
 
@@ -179,8 +182,9 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
-| Build: `pip: command not found` | Use `python3 -m pip` in `nixpacks.toml` (already in repo); clear custom build command |
-| Build: `No module named pip` | Remove custom Railway **build command**; use repo `nixpacks.toml` only |
+| Build: `ensurepip` failed | Use **Dockerfile** builder (`railway.toml`); do not use `python3 -m ensurepip` on Nix |
+| Build: `pip: command not found` | Use `python -m pip` or Dockerfile (not bare `pip`) |
+| Build: `No module named pip` | Switch builder to **DOCKERFILE**; clear custom build command in Railway UI |
 
 ---
 
@@ -188,8 +192,10 @@ npm run dev
 
 | File | Purpose |
 |------|---------|
-| `railway.toml` | Railway deploy defaults |
-| `nixpacks.toml` / `Procfile` | Build / process |
+| `Dockerfile` | **Recommended** — `python:3.12-slim`, pip included |
+| `.dockerignore` | Keeps frontend/`node_modules` out of API image |
+| `railway.toml` | `builder = DOCKERFILE`, start command, health check |
+| `nixpacks.toml` / `Procfile` | Nixpacks fallback only |
 | `requirements.txt` | Flat dependency list (reference / fallback) |
 | `nixpacks.toml` | Nixpacks install phase (`python3 -m pip install ".[api]"`) |
 | `scripts/railway_install.sh` | Manual/local install helper (optional) |

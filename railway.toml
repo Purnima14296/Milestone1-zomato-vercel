@@ -3,7 +3,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
+# Start via Dockerfile CMD (sh -c expands ${PORT}). Do not set --port $PORT here;
+# Railway runs startCommand without a shell, so $PORT would be passed literally.
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

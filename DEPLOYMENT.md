@@ -41,7 +41,7 @@ Railway (uvicorn → FastAPI)
 |---------|--------|
 | **Builder** | `DOCKERFILE` (see `railway.toml`) |
 | **Build** | `docker build` using root `Dockerfile` — `python -m pip install ".[api]"` |
-| **Start** | `python -m uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT` |
+| **Start** | Dockerfile `CMD` via `sh -c` with `${PORT:-8000}` (do not override with bare `$PORT` in Railway UI) |
 | **Health check** | `/api/health` |
 
 Fallback: Nixpacks (`nixpacks.toml` with `providers = ["python"]`) — do **not** use `ensurepip` on Railway/Nix.
@@ -182,6 +182,7 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
+| Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` only (no bare `--port $PORT` without `sh -c`) |
 | Build: `ensurepip` failed | Use **Dockerfile** builder (`railway.toml`); do not use `python3 -m ensurepip` on Nix |
 | Build: `pip: command not found` | Use `python -m pip` or Dockerfile (not bare `pip`) |
 | Build: `No module named pip` | Switch builder to **DOCKERFILE**; clear custom build command in Railway UI |

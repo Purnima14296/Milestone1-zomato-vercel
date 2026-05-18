@@ -1,3 +1,11 @@
-# Render backend — install from repository root:
-#   pip install -r requirements.txt
--e .[api]
+# Railway / pip — flat install (do not use `-e .` on Railway; use scripts/railway_install.sh).
+# Core dependencies (mirrors pyproject.toml + [api] extra):
+pydantic>=2.7
+pydantic-settings>=2.2
+python-dotenv>=1.0
+datasets>=2.19
+pandas>=2.2
+pyarrow>=15
+groq>=1.2.0
+fastapi>=0.115
+uvicorn[standard]>=0.30

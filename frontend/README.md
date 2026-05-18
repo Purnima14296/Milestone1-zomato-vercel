@@ -15,7 +15,7 @@ Open http://localhost:3000 . The UI calls the Phase 7 API; set `NEXT_PUBLIC_API_
 
 1. Import the GitHub repo on [Vercel](https://vercel.com).
 2. Set **Root Directory** to `frontend` (or deploy from repo root — root `vercel.json` builds `frontend/`).
-3. Add environment variable **`NEXT_PUBLIC_API_URL`** = your Render API URL (Production + Preview, no trailing slash).
+3. Add environment variable **`NEXT_PUBLIC_API_URL`** = your Railway API URL (Production + Preview, no trailing slash).
 4. Deploy. See [DEPLOYMENT.md](../DEPLOYMENT.md) for CORS and troubleshooting.
 
 ## Scripts

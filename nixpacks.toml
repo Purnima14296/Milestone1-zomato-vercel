@@ -1,0 +1,10 @@
+# Nixpacks (Railway) — https://nixpacks.com/docs/configuration/file
+
+[phases.setup]
+nixPkgs = ["python312", "bash"]
+
+[phases.install]
+cmds = ["bash scripts/railway_install.sh"]
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.12"

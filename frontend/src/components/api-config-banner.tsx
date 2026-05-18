@@ -14,7 +14,7 @@ export function ApiConfigBanner() {
         <p className="mt-2 text-xs text-amber-200/80">
           Example:{" "}
           <code className="rounded bg-zomato-dark px-1.5 py-0.5">
-            NEXT_PUBLIC_API_URL=https://your-app.onrender.com
+            NEXT_PUBLIC_API_URL=https://your-app.up.railway.app
           </code>
         </p>
       ) : null}

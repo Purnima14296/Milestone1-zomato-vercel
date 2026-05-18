@@ -21,12 +21,14 @@ from backend.app.pipeline import (
     restaurants_browse,
     run_recommendations,
 )
-from backend.app.env import (
-    apply_render_defaults,
+from backend.app.railway_env import (
+    apply_railway_defaults,
+    auto_ingest_if_missing,
+    cors_allow_vercel,
     cors_has_production_access,
     cors_origin_regex,
-    is_render,
-    render_service_url,
+    is_railway,
+    railway_public_url,
 )
 from backend.app.schemas import RecommendationRequest
 from zomato_rec.config import Settings
@@ -38,7 +40,7 @@ _env_file = repo_root() / ".env"
 if _env_file.is_file():
     load_dotenv(_env_file)
 
-apply_render_defaults()
+apply_railway_defaults()
 
 
 def _package_version() -> str:
@@ -107,12 +109,12 @@ async def _lifespan(_app: FastAPI):
     if not ds.is_file():
         logger.warning(
             "Processed dataset not found at %s — recommendations will return 503 until "
-            "ZOMATO_PROCESSED_DATASET is set, Render disk has Parquet at /var/data, or "
+            "ZOMATO_PROCESSED_DATASET is set, a Railway volume is mounted at /data, or "
             "ZOMATO_AUTO_INGEST_IF_MISSING=1 is enabled.",
             ds,
         )
-    if is_render():
-        logger.info("Running on Render; service URL=%s", render_service_url() or "(pending)")
+    if is_railway():
+        logger.info("Running on Railway; public URL=%s", railway_public_url() or "(pending)")
     yield
 
 
@@ -155,18 +157,26 @@ def health() -> dict:
     dataset_ok = ds.is_file()
     groq_configured = bool(settings.groq_api_key)
     origin_regex = cors_origin_regex()
-    return {
+    payload = {
         "status": _health_status(dataset_ok=dataset_ok, groq_configured=groq_configured),
         "dataset_path": str(ds),
         "dataset_ok": dataset_ok,
         "groq_configured": groq_configured,
         "groq_model": settings.groq_model,
-        "render": is_render(),
-        "render_url": render_service_url(),
-        "cors_origins": cors_origins if is_render() else None,
-        "cors_production_origin_configured": cors_has_production_access(cors_origins) if is_render() else None,
-        "cors_origin_regex": origin_regex if is_render() else None,
     }
+    if is_railway():
+        payload.update(
+            {
+                "railway": True,
+                "railway_url": railway_public_url(),
+                "cors_origins": cors_origins,
+                "cors_production_origin_configured": cors_has_production_access(cors_origins),
+                "cors_origin_regex": origin_regex,
+                "cors_allow_vercel": cors_allow_vercel(),
+                "auto_ingest_if_missing": auto_ingest_if_missing(),
+            }
+        )
+    return payload
 
 
 @app.get("/api/metadata")

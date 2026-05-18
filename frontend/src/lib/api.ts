@@ -47,8 +47,8 @@ function wrapFetchError(err: unknown): Error {
     if (msg.includes("fetch") || msg.includes("network") || msg.includes("failed")) {
       if (isDeployedFrontend()) {
         return new Error(
-          "Cannot reach the API. Set NEXT_PUBLIC_API_URL in Vercel to your Render URL and redeploy. " +
-            "If already set, check Render is running and /api/health works.",
+          "Cannot reach the API. Set NEXT_PUBLIC_API_URL in Vercel to your Railway URL and redeploy. " +
+            "If already set, check Railway is running and /api/health works.",
         );
       }
       return new Error(

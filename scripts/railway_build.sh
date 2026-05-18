@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Render build — repo root. See DEPLOYMENT.md §1.3
+# Railway build — repo root. See DEPLOYMENT.md §1.3 Option C
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> Installing Python dependencies"
-pip install -r requirements.txt
+bash "$(dirname "$0")/railway_install.sh"
 
 OUT="${ZOMATO_PROCESSED_DATASET:-data/processed/restaurants.parquet}"
 REPORT_DIR="$(dirname "$OUT")"
@@ -14,9 +14,9 @@ if [[ -f "$OUT" ]]; then
   exit 0
 fi
 
-if [[ "${RENDER_SKIP_DATASET_INGEST:-}" =~ ^(1|true|yes)$ ]]; then
-  echo "==> RENDER_SKIP_DATASET_INGEST set and dataset missing at ${OUT}"
-  echo "    Run once in Render Shell: python -m zomato_rec.phase1.ingest --out ${OUT}"
+if [[ "${RAILWAY_SKIP_DATASET_INGEST:-}" =~ ^(1|true|yes)$ ]]; then
+  echo "==> RAILWAY_SKIP_DATASET_INGEST set and dataset missing at ${OUT}"
+  echo "    Use a volume at /data or run: python -m zomato_rec.phase1.ingest --out ${OUT}"
   exit 0
 fi
 

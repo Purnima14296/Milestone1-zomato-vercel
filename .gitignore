@@ -1,13 +1,15 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+build/
+dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .venv/
 venv/
 
-# Streamlit (removed — use Render + Vercel)
+# Streamlit (removed — use Railway + Vercel)
 .streamlit/
 
 # Env / secrets

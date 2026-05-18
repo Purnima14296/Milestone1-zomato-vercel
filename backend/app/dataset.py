@@ -4,12 +4,12 @@ import logging
 import os
 from pathlib import Path
 
-from backend.app.env import auto_ingest_if_missing, is_render
 from backend.app.paths import repo_root
+from backend.app.railway_env import auto_ingest_if_missing, is_railway
 
 logger = logging.getLogger(__name__)
 
-RENDER_DISK_DATASET = Path("/var/data/restaurants.parquet")
+RAILWAY_VOLUME_DATASET = Path("/data/processed/restaurants.parquet")
 BUILD_DEFAULT_DATASET = repo_root() / "data" / "processed" / "restaurants.parquet"
 
 
@@ -18,18 +18,24 @@ def resolve_dataset_path() -> Path:
     Resolved Parquet path for the API.
 
     Priority:
-    1. `ZOMATO_PROCESSED_DATASET` env (Render disk, custom mount)
-    2. `/var/data/restaurants.parquet` on Render if the file exists
+    1. `ZOMATO_PROCESSED_DATASET` env (Railway volume, custom mount)
+    2. `/data/processed/restaurants.parquet` on Railway if the file exists
     3. `data/processed/restaurants.parquet` under repo root if it exists
-    4. `data/processed/restaurants.parquet` (Option A build output on Render)
     """
     override = os.environ.get("ZOMATO_PROCESSED_DATASET", "").strip()
+    if not override:
+        try:
+            from zomato_rec.config import Settings
+
+            override = (Settings().zomato_processed_dataset or "").strip()
+        except Exception:
+            override = ""
     if override:
         return Path(override)
 
     candidates: list[Path] = []
-    if is_render():
-        candidates.extend([RENDER_DISK_DATASET, BUILD_DEFAULT_DATASET])
+    if is_railway():
+        candidates.extend([RAILWAY_VOLUME_DATASET, BUILD_DEFAULT_DATASET])
     else:
         candidates.append(BUILD_DEFAULT_DATASET)
 
@@ -37,14 +43,11 @@ def resolve_dataset_path() -> Path:
         if path.is_file():
             return path
 
-    # Default path for logs/errors (Option A build output; Option B sets ZOMATO_PROCESSED_DATASET).
     return BUILD_DEFAULT_DATASET
 
 
 def ensure_dataset(*, settings: object | None = None) -> Path:
-    """
-    Ensure processed Parquet exists. When `ZOMATO_AUTO_INGEST_IF_MISSING=1`, run Phase 1 ingest.
-    """
+    """Ensure processed Parquet exists. Optional startup ingest via `ZOMATO_AUTO_INGEST_IF_MISSING=1`."""
     path = resolve_dataset_path()
     if path.is_file():
         logger.info("Dataset ready at %s", path)

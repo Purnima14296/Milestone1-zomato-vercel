@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     )
     hf_dataset_split: str = Field(default="train", validation_alias="HF_DATASET_SPLIT")
 
-    # Processed dataset (Phase 7 / Render). Overrides default path resolution when set.
+    # Processed dataset (Phase 7 / Railway). Overrides default path resolution when set.
     zomato_processed_dataset: str | None = Field(
         default=None, validation_alias="ZOMATO_PROCESSED_DATASET"
     )

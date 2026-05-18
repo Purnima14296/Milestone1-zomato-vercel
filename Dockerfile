@@ -10,12 +10,17 @@ RUN apt-get update \
 COPY pyproject.toml README.md requirements.txt ./
 COPY src ./src
 COPY backend ./backend
+COPY scripts/railway_start.sh ./scripts/railway_start.sh
 
 RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && python -m pip install --no-cache-dir ".[api]"
+    && python -m pip install --no-cache-dir ".[api]" \
+    && chmod +x ./scripts/railway_start.sh
 
 ENV PYTHONUNBUFFERED=1
+ENV HOST=0.0.0.0
 
+# Railway routes public traffic to $PORT (dynamic). EXPOSE is documentation only.
 EXPOSE 8080
 
-CMD ["sh", "-c", "python -m uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["/app/scripts/railway_start.sh"]
+

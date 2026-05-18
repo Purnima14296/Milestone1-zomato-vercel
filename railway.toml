@@ -3,8 +3,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-# Start via Dockerfile CMD (sh -c expands ${PORT}). Do not set --port $PORT here;
-# Railway runs startCommand without a shell, so $PORT would be passed literally.
+# Start via Dockerfile CMD → scripts/railway_start.sh (binds 0.0.0.0:$PORT).
+# Do not set startCommand here or in the Railway UI — bare $PORT breaks without a shell.
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"

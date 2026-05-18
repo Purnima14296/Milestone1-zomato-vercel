@@ -41,8 +41,10 @@ Railway (uvicorn → FastAPI)
 |---------|--------|
 | **Builder** | `DOCKERFILE` (see `railway.toml`) |
 | **Build** | `docker build` using root `Dockerfile` — `python -m pip install ".[api]"` |
-| **Start** | Dockerfile `CMD` via `sh -c` with `${PORT:-8080}` (uses Railway’s `PORT`; do not override with bare `$PORT` in Railway UI) |
+| **Start** | `scripts/railway_start.sh` → uvicorn on `0.0.0.0:$PORT` (do **not** set a custom start command in Railway UI) |
 | **Health check** | `/api/health` |
+
+After deploy, open `https://<your-service>.up.railway.app/api/health` (API only — UI is on Vercel). Root `/` redirects to `/api/health`.
 
 Fallback: Nixpacks (`nixpacks.toml` with `providers = ["python"]`) — do **not** use `ensurepip` on Railway/Nix.
 
@@ -182,7 +184,8 @@ npm run dev
 | Vercel “Cannot reach API” | Set `NEXT_PUBLIC_API_URL`, redeploy Vercel |
 | `cors_production_origin_configured: false` | Redeploy Railway with latest code; check `API_CORS_ALLOW_VERCEL` |
 | Cold start | Railway free tier may sleep; wait and retry |
-| Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` only (no bare `--port $PORT` without `sh -c`) |
+| Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |
+| URL won’t load / connection refused | Logs must show `Railway start: binding 0.0.0.0:<PORT>` and `Uvicorn running on http://0.0.0.0:<PORT>` with the **same** `<PORT>` as Railway **Variables** → `PORT`. Enable **Public Networking** and generate a domain. |
 | Build: `ensurepip` failed | Use **Dockerfile** builder (`railway.toml`); do not use `python3 -m ensurepip` on Nix |
 | Build: `pip: command not found` | Use `python -m pip` or Dockerfile (not bare `pip`) |
 | Build: `No module named pip` | Switch builder to **DOCKERFILE**; clear custom build command in Railway UI |
@@ -199,6 +202,7 @@ npm run dev
 | `nixpacks.toml` / `Procfile` | Nixpacks fallback only |
 | `requirements.txt` | Flat dependency list (reference / fallback) |
 | `nixpacks.toml` | Nixpacks install phase (`python3 -m pip install ".[api]"`) |
+| `scripts/railway_start.sh` | Production start — `0.0.0.0` + Railway `PORT` |
 | `scripts/railway_install.sh` | Manual/local install helper (optional) |
 | `runtime.txt` | Python 3.12 |
 | `backend/app/railway_env.py` | Railway + Vercel CORS |

@@ -114,7 +114,13 @@ async def _lifespan(_app: FastAPI):
             ds,
         )
     if is_railway():
-        logger.info("Running on Railway; public URL=%s", railway_public_url() or "(pending)")
+        port = os.getenv("PORT", "(unset)")
+        logger.info(
+            "Running on Railway; bind=%s:%s public_url=%s",
+            os.getenv("HOST", "0.0.0.0"),
+            port,
+            railway_public_url() or "(pending)",
+        )
     yield
 
 

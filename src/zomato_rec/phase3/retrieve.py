@@ -21,11 +21,12 @@ def _norm_key(s: str) -> str:
 
 
 def load_processed_dataset(path: str) -> pd.DataFrame:
-    if path.lower().endswith(".parquet"):
+    lower = path.lower()
+    if lower.endswith(".parquet"):
         df = pd.read_parquet(path)
-    if path.lower().endswith(".csv"):
+    elif lower.endswith(".csv"):
         df = pd.read_csv(path)
-    elif not path.lower().endswith((".parquet", ".csv")):
+    else:
         raise ValueError(f"Unsupported dataset format: {path}")
 
     df = ensure_processed_schema(df)
@@ -248,8 +249,10 @@ def run_phase3(
     preferences_path: str = os.path.join("storage", "preferences.json"),
     out_path: str = os.path.join("storage", "shortlist.json"),
     top_n: int = 30,
+    df: pd.DataFrame | None = None,
 ) -> ShortlistReport:
-    df = load_processed_dataset(processed_dataset_path)
+    if df is None:
+        df = load_processed_dataset(processed_dataset_path)
     prefs = load_preferences(preferences_path)
 
     filtered = filter_candidates(df, prefs)

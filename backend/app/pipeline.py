@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -14,12 +15,15 @@ from zomato_rec.phase3.retrieve import load_processed_dataset, run_phase3
 from zomato_rec.phase4.recommend import run_phase4
 
 from backend.app.dataset import resolve_dataset_path
+from backend.app.dataset_cache import get_processed_dataframe
 from backend.app.schemas import (
     PreferencesIn,
     RecommendationMetadata,
     RecommendationRequest,
     RecommendationResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _to_user_preferences(p: PreferencesIn) -> UserPreferences:
@@ -66,6 +70,10 @@ def run_recommendations(req: RecommendationRequest) -> RecommendationResponse:
     prefs = _to_user_preferences(req.preferences)
     t0 = time.perf_counter()
 
+    logger.info("recommendations: loading dataset cache")
+    df = get_processed_dataframe()
+    logger.info("recommendations: dataset ready (%d rows)", len(df))
+
     with TemporaryDirectory(prefix="zomato_phase7_") as tmp:
         tmp_path = Path(tmp)
         prefs_path = tmp_path / "preferences.json"
@@ -75,11 +83,13 @@ def run_recommendations(req: RecommendationRequest) -> RecommendationResponse:
 
         save_preferences(prefs, str(prefs_path))
 
+        logger.info("recommendations: phase3 shortlist")
         p3 = run_phase3(
             processed_dataset_path=str(dataset),
             preferences_path=str(prefs_path),
             out_path=str(shortlist_path),
             top_n=req.shortlist_top_n,
+            df=df,
         )
 
         if p3.shortlist_size == 0:
@@ -88,6 +98,7 @@ def run_recommendations(req: RecommendationRequest) -> RecommendationResponse:
                 "Try relaxing location, budget, rating, or cuisine constraints."
             )
 
+        logger.info("recommendations: phase4 groq (shortlist=%d)", p3.shortlist_size)
         try:
             p4 = run_phase4(
                 shortlist_path=str(shortlist_path),
@@ -101,6 +112,8 @@ def run_recommendations(req: RecommendationRequest) -> RecommendationResponse:
         except SystemExit as e:
             msg = str(e) or "Recommendation pipeline failed."
             raise RuntimeError(msg) from e
+        except Exception as e:
+            raise RuntimeError(f"Recommendation pipeline failed: {e}") from e
 
         with open(recs_path, encoding="utf-8") as f:
             recommendations = json.load(f)

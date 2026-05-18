@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.app.dataset import (
@@ -20,6 +21,7 @@ from backend.app.dataset import (
     prepare_dataset_at_startup,
     resolve_dataset_path,
 )
+from backend.app.dataset_cache import warm_dataset_cache
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -112,6 +114,8 @@ async def _lifespan(_app: FastAPI):
     settings = Settings()
     configure_logging(settings.log_level)
     prepare_dataset_at_startup(settings=settings)
+    if resolve_dataset_path().is_file():
+        warm_dataset_cache()
     if is_railway():
         port = os.getenv("PORT", "(unset)")
         logger.info(
@@ -220,9 +224,9 @@ def locations(limit: int = Query(default=500, ge=10, le=5000)) -> dict:
 
 
 @app.post("/api/recommendations")
-def recommendations(body: RecommendationRequest) -> dict:
+async def recommendations(body: RecommendationRequest) -> dict:
     try:
-        out = run_recommendations(body)
+        out = await run_in_threadpool(run_recommendations, body)
         return out.model_dump()
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
@@ -230,6 +234,9 @@ def recommendations(body: RecommendationRequest) -> dict:
         raise HTTPException(status_code=422, detail=str(e)) from e
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        logger.exception("Unhandled error in /api/recommendations")
+        raise HTTPException(status_code=500, detail=f"Recommendation failed: {e}") from e
 
 
 @app.get("/api/restaurants")

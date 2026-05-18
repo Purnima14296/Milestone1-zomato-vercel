@@ -186,6 +186,7 @@ npm run dev
 | Cold start | Railway free tier may sleep; wait and retry |
 | Deploy: `'$PORT' is not a valid integer` | Clear **Custom Start Command** in Railway; use Dockerfile `CMD` → `railway_start.sh` only |
 | URL won’t load / connection refused | Logs must show `Railway start: binding 0.0.0.0:<PORT>` and `Uvicorn running on http://0.0.0.0:<PORT>` with the **same** `<PORT>` as Railway **Variables** → `PORT`. Enable **Public Networking** and generate a domain. |
+| Crash loop during HF ingest | App serves `/api/health` immediately (`status: starting`); ingest runs in background. `healthcheckTimeout = 600` in `railway.toml`. |
 | Build: `ensurepip` failed | Use **Dockerfile** builder (`railway.toml`); do not use `python3 -m ensurepip` on Nix |
 | Build: `pip: command not found` | Use `python -m pip` or Dockerfile (not bare `pip`) |
 | Build: `No module named pip` | Switch builder to **DOCKERFILE**; clear custom build command in Railway UI |

@@ -13,7 +13,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.app.dataset import ensure_dataset, resolve_dataset_path
+from backend.app.dataset import (
+    ingest_error,
+    ingest_state,
+    is_ingest_running,
+    prepare_dataset_at_startup,
+    resolve_dataset_path,
+)
 from backend.app.paths import repo_root
 from backend.app.pipeline import (
     default_dataset_path,
@@ -105,14 +111,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 async def _lifespan(_app: FastAPI):
     settings = Settings()
     configure_logging(settings.log_level)
-    ds = ensure_dataset(settings=settings)
-    if not ds.is_file():
-        logger.warning(
-            "Processed dataset not found at %s — recommendations will return 503 until "
-            "ZOMATO_PROCESSED_DATASET is set, a Railway volume is mounted at /data, or "
-            "ZOMATO_AUTO_INGEST_IF_MISSING=1 is enabled.",
-            ds,
-        )
+    prepare_dataset_at_startup(settings=settings)
     if is_railway():
         port = os.getenv("PORT", "(unset)")
         logger.info(
@@ -149,7 +148,9 @@ def root() -> RedirectResponse:
     return RedirectResponse(url="/api/health")
 
 
-def _health_status(*, dataset_ok: bool, groq_configured: bool) -> str:
+def _health_status(*, dataset_ok: bool, groq_configured: bool, dataset_loading: bool) -> str:
+    if dataset_loading:
+        return "starting"
     if dataset_ok and groq_configured:
         return "ok"
     return "degraded"
@@ -161,15 +162,24 @@ def health() -> dict:
     ds = resolve_dataset_path()
     cors_origins = _cors_origins()
     dataset_ok = ds.is_file()
+    dataset_loading = is_ingest_running()
     groq_configured = bool(settings.groq_api_key)
     origin_regex = cors_origin_regex()
     payload = {
-        "status": _health_status(dataset_ok=dataset_ok, groq_configured=groq_configured),
+        "status": _health_status(
+            dataset_ok=dataset_ok,
+            groq_configured=groq_configured,
+            dataset_loading=dataset_loading,
+        ),
         "dataset_path": str(ds),
         "dataset_ok": dataset_ok,
+        "dataset_loading": dataset_loading,
+        "dataset_ingest_state": ingest_state(),
         "groq_configured": groq_configured,
         "groq_model": settings.groq_model,
     }
+    if ingest_error():
+        payload["dataset_ingest_error"] = ingest_error()
     if is_railway():
         payload.update(
             {
